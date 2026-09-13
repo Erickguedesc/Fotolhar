@@ -83,7 +83,6 @@ export default function InformacoesCard({ ensaio, selecao, onEdit }) {
             <InfoItem label="Tipo" value={getTipoExibicao(ensaio)} compact />
 
             <InfoItem label="Cidade do ensaio" value={getSafeValue(cidadeUf)} compact />
-            <InfoItem label="Endereço completo" value={getSafeValue(ensaio.enderecoCompleto)} compact />
             <InfoItem label="Referência" value={getSafeValue(ensaio.referenciaLocal)} compact />
 
             <InfoItem label="Data" value={formatDate(ensaio.dataEnsaio)} compact />
@@ -219,25 +218,28 @@ function ValorItem({ label, value, meta, highlight }) {
 }
 
 function LocationPreview({ ensaio }) {
+  const local = ensaio?.local?.trim()
+  const cidadeUf = [ensaio?.cidadeEnsaio, ensaio?.estadoEnsaio].filter(Boolean).join(', ')
   const query = montarConsultaMapa({
-    enderecoCompleto: ensaio?.enderecoCompleto,
     cidade: ensaio?.cidadeEnsaio,
     estado: ensaio?.estadoEnsaio,
-    local: ensaio?.local,
   }).trim()
-  const cidadeUf = [ensaio?.cidadeEnsaio, ensaio?.estadoEnsaio].filter(Boolean).join(', ')
-  const label = ensaio?.enderecoCompleto || cidadeUf || ensaio?.local
-  const hasMapQuery = Boolean(query)
+  const label = cidadeUf || ensaio?.cidadeEnsaio?.trim()
 
-  if (!hasMapQuery) {
+  if (!query) {
     return (
       <div className="flex min-h-[152px] flex-col items-center justify-center rounded-[12px] border border-dashed border-[var(--border)] bg-white/60 p-4 text-center">
         <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[var(--gold-dim)] text-[var(--gold)]">
           <MapPin size={18} />
         </span>
         <p className="mt-3 text-[13px] font-medium text-[var(--text)]">
-          Local não informado
+          Cidade do ensaio não informada
         </p>
+        {local ? (
+          <p className="mt-1 max-w-[260px] text-[12px] leading-5 text-[var(--text-muted)]">
+            Local: {local}
+          </p>
+        ) : null}
       </div>
     )
   }

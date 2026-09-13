@@ -89,7 +89,7 @@ function getDashboardTip(dashboard, agenda, today) {
         return {
             title: 'Ensaio hoje',
             text: 'Confira horário, local e detalhes do atendimento antes de sair para o ensaio.',
-            to: '/ensaios?view=calendar',
+            to: '/ensaios?view=calendar&grupo=todos',
         }
     }
 
@@ -121,7 +121,7 @@ function getDashboardTip(dashboard, agenda, today) {
         return {
             title: 'Agenda da semana',
             text: 'Revise os próximos ensaios e confirme detalhes de horário, local e contrato.',
-            to: '/ensaios?view=calendar',
+            to: '/ensaios?view=calendar&grupo=todos',
         }
     }
 
@@ -207,7 +207,7 @@ export default function DashboardHeader({ dashboard }) {
                         </h2>
 
                         <Link
-                            to="/ensaios?view=calendar"
+                            to="/ensaios?view=calendar&grupo=todos"
                             className="theme-muted inline-flex items-center gap-2 text-xs font-medium transition hover:text-[var(--gold)]"
                         >
                             Ver agenda
@@ -254,7 +254,7 @@ export default function DashboardHeader({ dashboard }) {
                         </p>
 
                         <Link
-                            to="/ensaios?view=calendar"
+                            to="/ensaios?view=calendar&grupo=todos"
                             aria-label="Abrir agenda"
                             className="text-[var(--gold)] transition hover:translate-x-0.5"
                         >

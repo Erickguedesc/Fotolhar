@@ -70,15 +70,21 @@ const normalizeDateParam = (value) => {
   return valid ? value : ''
 }
 
-const getInitialFilters = (searchParams) => ({
-  ...INITIAL_FILTERS,
-  clienteNome: searchParams.get('clienteNome') || '',
-  tipo: searchParams.get('tipo') || '',
-  status: searchParams.get('status') || '',
-  dataInicio: normalizeDateParam(searchParams.get('dataInicio')),
-  dataFim: normalizeDateParam(searchParams.get('dataFim')),
-  grupo: searchParams.get('status') ? '' : searchParams.get('grupo') || 'ativos',
-})
+const getInitialFilters = (searchParams) => {
+  const status = searchParams.get('status') || ''
+  const grupo = searchParams.get('grupo')
+  const viewMode = searchParams.get('view')
+
+  return {
+    ...INITIAL_FILTERS,
+    clienteNome: searchParams.get('clienteNome') || '',
+    tipo: searchParams.get('tipo') || '',
+    status,
+    dataInicio: normalizeDateParam(searchParams.get('dataInicio')),
+    dataFim: normalizeDateParam(searchParams.get('dataFim')),
+    grupo: status ? '' : grupo || (viewMode === 'calendar' ? 'todos' : 'ativos'),
+  }
+}
 
 const buildParams = (filters) => {
   const params = {}

@@ -24,6 +24,7 @@ import { ensaiosService } from '../services/ensaiosService'
 import {
   completeOnboarding,
   getDemoEnsaioId,
+  migrateOnboardingAccountKeys,
   setDemoEnsaioId,
 } from '../utils/onboarding'
 import {
@@ -31,6 +32,7 @@ import {
   isCurrentAuthSession,
   isStaleSessionError,
 } from '../utils/authSession'
+import { invalidateOnboardingRouteCache } from '../utils/onboardingRouteCache'
 
 const steps = [
   { id: 'perfil', label: 'Perfil', icon: UserRound },
@@ -187,7 +189,23 @@ export default function OnboardingPage() {
     }
 
     await runSave(async () => {
+      const previousEmail = localStorage.getItem('usuarioEmail') || perfil.email
       let data = await configuracoesService.atualizarUsuario(perfil)
+      const nextEmail = data?.email || perfil.email
+
+      migrateOnboardingAccountKeys(previousEmail, nextEmail, {
+        onboardingConcluido: data?.onboardingConcluido,
+        onboardingConcluidoEm: data?.onboardingConcluidoEm,
+      })
+
+      if (data?.token) {
+        localStorage.setItem('token', data.token)
+        configuracoesService.invalidateAllUserCaches()
+        invalidateOnboardingRouteCache()
+      }
+
+      localStorage.setItem('usuarioNome', data?.nome || perfil.nome)
+      localStorage.setItem('usuarioEmail', nextEmail)
 
       if (fotoPerfilFile) {
         data = await configuracoesService.uploadFotoPerfil(fotoPerfilFile)

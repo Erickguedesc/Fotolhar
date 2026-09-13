@@ -13,7 +13,6 @@ import {
 } from 'lucide-react'
 
 import { configuracoesService } from '../../services/configuracoesService'
-import { dashboardService } from '../../services/dashboardService'
 import { ensaiosService } from '../../services/ensaiosService'
 import { getPreservedOnboardingEntries } from '../../utils/onboarding'
 import {
@@ -113,179 +112,95 @@ const navLinks = [
   { label: 'Configurações', to: '/configuracoes', icon: Settings },
 ]
 
-function getDate(value) {
-  if (!value) return null
+const SIDEBAR_QUICK_TIPS = [
+  {
+    id: 'CLIENTES_REGIAO',
+    title: 'Organize sua base',
+    text: 'Manter a região dos clientes atualizada ajuda a entender onde seu trabalho tem mais presença.',
+    button: 'Ver clientes',
+    route: '/clientes',
+  },
+  {
+    id: 'AGENDA',
+    title: 'Planeje a agenda',
+    text: 'Cadastre seus próximos ensaios para visualizar o mês e se preparar com antecedência.',
+    button: 'Novo ensaio',
+    route: '/novo-ensaio',
+  },
+  {
+    id: 'PROXIMOS_ENSAIOS',
+    title: 'Próximos ensaios',
+    text: '',
+    button: 'Ver agenda',
+    route: '/ensaios?view=calendar',
+  },
+  {
+    id: 'ALBUNS',
+    title: 'Apresente seu trabalho',
+    text: 'Crie álbuns para reunir fotos, valorizar a entrega e facilitar o compartilhamento com cada cliente.',
+    button: 'Ver ensaios',
+    route: '/ensaios',
+  },
+  {
+    id: 'FINANCEIRO',
+    title: 'Cuide do financeiro',
+    text: 'Registrar valores e formas de pagamento torna seus relatórios mais úteis para o planejamento do estúdio.',
+    button: 'Ver relatórios',
+    route: '/relatorios',
+  },
+  {
+    id: 'ROTINA',
+    title: 'Organize sua rotina',
+    text: 'Reserve alguns minutos para revisar sua agenda e deixar os próximos atendimentos bem preparados.',
+    button: 'Ver agenda',
+    route: '/ensaios?view=calendar',
+  },
+  {
+    id: 'PORTFOLIO',
+    title: 'Valorize suas entregas',
+    text: 'Revisitar trabalhos concluídos é uma boa oportunidade para selecionar imagens para o seu portfólio.',
+    button: 'Ver ensaios',
+    route: '/ensaios?status=FINALIZADO',
+  },
+  {
+    id: 'PREFERENCIAS',
+    title: 'Personalize o estúdio',
+    text: 'Ajuste suas preferências para deixar o sistema mais alinhado à sua forma de trabalhar.',
+    button: 'Abrir configurações',
+    route: '/configuracoes',
+  },
+]
 
-  const date = new Date(value)
+const FALLBACK_SIDEBAR_TIP_IDS = ['ROTINA', 'PORTFOLIO', 'PREFERENCIAS']
 
-  return Number.isNaN(date.getTime()) ? null : date
+function getTipById(id) {
+  return SIDEBAR_QUICK_TIPS.find((tip) => tip.id === id)
 }
 
-function isSameLocalDay(left, right) {
-  return (
-    left.getFullYear() === right.getFullYear() &&
-    left.getMonth() === right.getMonth() &&
-    left.getDate() === right.getDate()
-  )
-}
+function getSidebarQuickTip(rotationSlot = 0, context = null) {
+  const clientesSemCidade = Number(context?.clientesSemCidade || 0)
+  const ensaiosDoMes = context?.ensaiosDoMes
+  const ensaiosAgendados = Number(context?.ensaiosAgendados || 0)
+  const naoExistemAlbunsCriados = context?.naoExistemAlbunsCriados === true
+  const dadosFinanceirosIncompletos = context?.dadosFinanceirosIncompletos === true
 
-function getFirstName(name = '') {
-  return name.trim().split(' ').filter(Boolean)[0] || ''
-}
+  if (clientesSemCidade > 0) return getTipById('CLIENTES_REGIAO')
+  if (ensaiosDoMes === 0) return getTipById('AGENDA')
+  if (naoExistemAlbunsCriados) return getTipById('ALBUNS')
+  if (dadosFinanceirosIncompletos) return getTipById('FINANCEIRO')
+  if (ensaiosAgendados > 0) {
+    const tip = getTipById('PROXIMOS_ENSAIOS')
+    const descricao = ensaiosAgendados === 1
+      ? 'Você tem 1 ensaio agendado.'
+      : `Você tem ${ensaiosAgendados} ensaios agendados.`
 
-function getEnsaiosDoDia(ensaios = [], date) {
-  return ensaios.filter((ensaio) => {
-    const ensaioDate = getDate(ensaio?.dataEnsaio)
-    return ensaio?.status !== 'CANCELADO' && ensaioDate && isSameLocalDay(ensaioDate, date)
-  })
-}
-
-function getHojeParams(today = new Date()) {
-  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
-  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
-
-  return {
-    dataInicio: start.toISOString(),
-    dataFim: end.toISOString(),
-  }
-}
-
-function sortEnsaiosPorHorario(ensaios = []) {
-  return ensaios
-    .slice()
-    .sort((left, right) => (getDate(left?.dataEnsaio) || 0) - (getDate(right?.dataEnsaio) || 0))
-}
-
-function getEnsaiosHoje(dashboard, agenda, today, ensaiosHojeOverride) {
-  if (Array.isArray(ensaiosHojeOverride)) {
-    return sortEnsaiosPorHorario(getEnsaiosDoDia(ensaiosHojeOverride, today))
-  }
-
-  const ensaiosDoDia = Array.isArray(dashboard?.ensaiosDoDia) ? dashboard.ensaiosDoDia : []
-  const fallback = getEnsaiosDoDia(agenda, today)
-
-  return sortEnsaiosPorHorario(getEnsaiosDoDia(ensaiosDoDia.length ? ensaiosDoDia : fallback, today))
-}
-
-function getEnsaiosAgendadosHoje(ensaiosHoje = []) {
-  return sortEnsaiosPorHorario(ensaiosHoje.filter((ensaio) => ensaio?.status === 'AGENDADO'))
-}
-
-function formatarDetalheEnsaioHoje(ensaio) {
-  const horario = formatarHora(ensaio?.dataEnsaio)
-  const cliente = getFirstName(ensaio?.clienteNome) || 'cliente'
-  const local = ensaio?.local || 'local não informado'
-
-  return `${horario} ${cliente} · ${local}`
-}
-
-function formatarResumoEnsaiosHoje(ensaiosHoje = [], limit = Infinity) {
-  const ensaios = sortEnsaiosPorHorario(ensaiosHoje)
-
-  if (!ensaios.length) return ''
-
-  const itens = ensaios.slice(0, limit).map((ensaio) => {
-    const horario = formatarHora(ensaio.dataEnsaio)
-    const cliente = getFirstName(ensaio.clienteNome) || 'cliente'
-
-    return `${horario} ${cliente}`
-  })
-  const restantes = Number.isFinite(limit) ? ensaios.length - itens.length : 0
-
-  return `${itens.join(', ')}${restantes > 0 ? ` +${restantes}` : ''}`
-}
-
-function formatarHora(value) {
-  const date = getDate(value)
-
-  if (!date) return ''
-
-  return date.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function getSidebarQuickTip(dashboard, ensaiosHojeOverride, rotationSlot = 0) {
-  if (!dashboard) {
     return {
-      title: 'Carregando dica',
-      text: 'Buscando agenda e pendências do estúdio para sugerir o próximo passo.',
-      to: '/dashboard',
-      cta: 'Abrir painel',
+      ...tip,
+      text: `${descricao} Revise datas e confirme os detalhes com antecedência.`,
     }
   }
 
-  const agenda = dashboard?.agendaProxima || []
-  const hoje = new Date()
-  const ensaiosHoje = getEnsaiosHoje(dashboard, agenda, hoje, ensaiosHojeOverride)
-  const ensaiosAgendadosHoje = getEnsaiosAgendadosHoje(ensaiosHoje)
-  const pendenciasTotal = Number(dashboard?.pendenciasTotal || dashboard?.atencaoNecessaria?.length || 0)
-  const selecoesEnviadas = Number(dashboard?.selecoesEnviadas || 0)
-  const ensaiosSemFotos = Number(dashboard?.ensaiosSemFotosEnviadas || 0)
-  const ensaiosSemana = Number(dashboard?.ensaiosProximosSeteDias || agenda.length || 0)
-  const totalEnsaios = Number(dashboard?.totalEnsaios || 0)
-  const tips = []
-
-  if (ensaiosAgendadosHoje.length > 0) {
-    const totalHoje = ensaiosAgendadosHoje.length
-    const labelHoje = totalHoje === 1 ? '1 ensaio hoje' : `${totalHoje} ensaios hoje`
-    const resumoHoje = formatarResumoEnsaiosHoje(ensaiosAgendadosHoje, 3)
-
-    tips.push({
-      title: 'Checklist de saída',
-      text: totalHoje === 1
-        ? `${labelHoje}: ${formatarDetalheEnsaioHoje(ensaiosAgendadosHoje[0])}. Confira bateria e observações.`
-        : `${labelHoje}: ${resumoHoje}. Confira bateria e observações.`,
-      to: '/ensaios?view=calendar',
-      cta: 'Ver agenda',
-    })
-  }
-
-  if (pendenciasTotal > 0) {
-    tips.push({
-      title: 'Bloco de revisão',
-      text: `${pendenciasTotal} ${pendenciasTotal === 1 ? 'item pede' : 'itens pedem'} atenção necessária. Abra a lista para tratar cada ensaio sem perder o contexto.`,
-      to: '/dashboard?pendencias=1',
-      cta: 'Ver pendências',
-    })
-  }
-
-  if (selecoesEnviadas > 0 || ensaiosSemFotos > 0) {
-    tips.push({
-      title: 'Fluxo de entrega',
-      text: 'Reserve alguns minutos para avançar uploads, seleções e próximas etapas dos ensaios.',
-      to: '/dashboard',
-      cta: 'Revisar fluxo',
-    })
-  }
-
-  if (ensaiosSemana > 0) {
-    tips.push({
-      title: 'Pré-produção',
-      text: 'Revise os próximos ensaios da semana e confirme horário, local e contrato.',
-      to: '/ensaios?view=calendar',
-      cta: 'Ver agenda',
-    })
-  }
-
-  if (!totalEnsaios) {
-    tips.push({
-      title: 'Começar agenda',
-      text: 'Cadastre o primeiro atendimento para preencher agenda e relatórios.',
-      to: '/novo-ensaio',
-      cta: 'Novo ensaio',
-    })
-  }
-
-  tips.push({
-    title: 'Rotina leve',
-    text: 'Sem urgências agora. Aproveite para revisar contratos, mensagens e preferências.',
-    to: '/configuracoes',
-    cta: 'Revisar',
-  })
-
-  return tips[rotationSlot % tips.length]
+  return getTipById(FALLBACK_SIDEBAR_TIP_IDS[rotationSlot % FALLBACK_SIDEBAR_TIP_IDS.length])
 }
 
 function getInitials(nome = '') {
@@ -300,15 +215,13 @@ function getInitials(nome = '') {
   return initials || 'FT'
 }
 
-export default function Header() {
+export default function Header({ quickTipContext = null }) {
   const location = useLocation()
   const navigate = useNavigate()
   const menuRef = useRef(null)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [usuario, setUsuario] = useState(() => readCachedUsuario())
-  const [dashboardResumo, setDashboardResumo] = useState(null)
-  const [ensaiosHojeOverride, setEnsaiosHojeOverride] = useState(null)
   const [tipRotationSlot, setTipRotationSlot] = useState(() =>
     Math.floor(Date.now() / SIDEBAR_TIP_ROTATION_INTERVAL_MS)
   )
@@ -362,63 +275,12 @@ export default function Header() {
   }, [])
 
   useEffect(() => {
-    let isMounted = true
-    const sessionKey = getCurrentAuthSessionKey()
-
-    async function carregarResumoDashboard() {
-      try {
-        const data = await dashboardService.buscarResumo()
-
-        if (!isMounted || !isCurrentAuthSession(sessionKey)) {
-          return
-        }
-
-        setDashboardResumo(data)
-        setEnsaiosHojeOverride(null)
-
-        const totalHoje = Number(data?.ensaiosHoje || 0)
-        const totalDetalhado = Array.isArray(data?.ensaiosDoDia) ? data.ensaiosDoDia.length : 0
-
-        if (totalHoje > totalDetalhado) {
-          try {
-            const response = await ensaiosService.listar(getHojeParams())
-            const ensaiosHoje = Array.isArray(response.data) ? response.data : []
-
-            if (isMounted && isCurrentAuthSession(sessionKey)) {
-              setEnsaiosHojeOverride(ensaiosHoje)
-            }
-          } catch (error) {
-            console.error('[Header] Erro ao completar ensaios de hoje:', error?.response?.data || error)
-          }
-        }
-      } catch (error) {
-        if (isMounted && !isStaleSessionError(error) && isCurrentAuthSession(sessionKey)) {
-          setDashboardResumo({})
-          setEnsaiosHojeOverride(null)
-        }
-      }
-    }
-
-    carregarResumoDashboard()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
-  useEffect(() => {
     const interval = window.setInterval(() => {
       setTipRotationSlot(Math.floor(Date.now() / SIDEBAR_TIP_ROTATION_INTERVAL_MS))
     }, 60000)
 
     return () => window.clearInterval(interval)
   }, [])
-
-  useEffect(() => {
-    if (!dashboardResumo) return
-
-    ensaiosService.prefetchListar()
-  }, [dashboardResumo])
 
   useEffect(() => {
     if (!usuario?.fotoPerfilUrl) return
@@ -443,8 +305,8 @@ export default function Header() {
 
   const initials = useMemo(() => getInitials(usuario?.nome), [usuario])
   const quickTip = useMemo(
-    () => getSidebarQuickTip(dashboardResumo, ensaiosHojeOverride, tipRotationSlot),
-    [dashboardResumo, ensaiosHojeOverride, tipRotationSlot]
+    () => getSidebarQuickTip(tipRotationSlot, quickTipContext),
+    [tipRotationSlot, quickTipContext]
   )
   const usuarioNome = usuario?.nome || usuario?.email || 'Usuário'
   const usuarioDetalhe = 'Fotógrafo'
@@ -528,10 +390,10 @@ export default function Header() {
             </p>
 
             <Link
-              to={quickTip.to}
+              to={quickTip.route}
               className="mt-3 flex h-9 items-center justify-center rounded-[7px] border border-[#C84F32] bg-transparent px-2.5 text-center text-[10.5px] font-semibold text-[#F8EDE8] no-underline transition hover:border-[#AE3F28] hover:bg-[#2A1713] hover:text-[#FFFFFF]"
             >
-              {quickTip.cta}
+              {quickTip.button}
             </Link>
           </article>
 

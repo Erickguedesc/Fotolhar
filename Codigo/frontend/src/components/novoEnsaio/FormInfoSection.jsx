@@ -91,18 +91,16 @@ export default function FormInfoSection({
   const [mapOpen, setMapOpen] = useState(false)
   const mapInitialQuery = useMemo(
     () => montarConsultaMapa({
-      enderecoCompleto: form.enderecoCompleto,
       cidade: form.cidadeEnsaio,
-      local: form.local,
     }),
-    [form.cidadeEnsaio, form.enderecoCompleto, form.local],
+    [form.cidadeEnsaio],
   )
 
   const handleUseLocationFromMap = (value) => {
     const parsed = interpretarTextoLocalizacao(value)
 
-    set('enderecoCompleto', value)
-    if (parsed.cidade) set('cidadeEnsaio', parsed.cidade)
+    set('cidadeEnsaio', parsed.cidade || value)
+    set('enderecoCompleto', '')
 
     setMapOpen(false)
   }
@@ -351,14 +349,14 @@ export default function FormInfoSection({
               </div>
             </FormInput>
 
-            <FormInput label="Endereço completo" error={errors.enderecoCompleto}>
-              <div className={`${compoundInputClass} ${errors.enderecoCompleto ? errorInputClass : ''}`}>
+            <FormInput label="Cidade do ensaio (Opicional, para visualizar no mapa)" error={errors.cidadeEnsaio}>
+              <div className={`${compoundInputClass} ${errors.cidadeEnsaio ? errorInputClass : ''}`}>
                 <Map className="ml-3.5 h-4 w-4 flex-shrink-0 text-[var(--text-muted)] opacity-75" strokeWidth={1.8} />
                 <input
                   type="text"
-                  placeholder="Opcional, se quiser abrir rota exata"
-                  value={form.enderecoCompleto}
-                  onChange={(e) => set('enderecoCompleto', e.target.value)}
+                  placeholder="Cidade x, Estado y"
+                  value={form.cidadeEnsaio}
+                  onChange={(e) => set('cidadeEnsaio', e.target.value)}
                   className="min-w-0 flex-1 bg-transparent px-3 py-[11px] text-[13.5px] text-[var(--text)] outline-none placeholder:text-[var(--text-muted)]"
                 />
                 <button
@@ -374,16 +372,6 @@ export default function FormInfoSection({
           </div>
 
           <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
-            <FormInput label="Cidade do ensaio" error={errors.cidadeEnsaio}>
-              <input
-                type="text"
-                placeholder="Opcional"
-                value={form.cidadeEnsaio}
-                onChange={(e) => set('cidadeEnsaio', e.target.value)}
-                className={`${inputClass} ${errors.cidadeEnsaio ? errorInputClass : ''}`}
-              />
-            </FormInput>
-
             <FormInput label="Referência do local" error={errors.referenciaLocal}>
               <input
                 type="text"

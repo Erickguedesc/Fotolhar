@@ -24,6 +24,7 @@ public class DashboardResumoResponse {
     private Integer ensaiosSemFotosEnviadas;
     private Integer pendenciasTotal;
     private BigDecimal receitaEstimada;
+    private List<DashboardReceitaHistoricoResponse> receitaPrevistaHistorico;
 
     private Integer ensaiosFinalizadosMes;
     private Map<String, Integer> pipelineStatus;

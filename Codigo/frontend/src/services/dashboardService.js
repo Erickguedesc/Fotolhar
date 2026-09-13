@@ -11,4 +11,8 @@ export const dashboardService = {
         })
         return response.data
     },
+    buscarMensagens: async () => {
+        const response = await api.get('/dashboard/mensagens')
+        return response.data
+    },
 }

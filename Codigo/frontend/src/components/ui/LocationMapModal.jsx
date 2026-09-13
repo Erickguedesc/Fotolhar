@@ -134,7 +134,7 @@ export default function LocationMapModal({ initialQuery, onClose, onUseLocation,
               className="inline-flex min-h-[42px] items-center gap-2 rounded-[9px] bg-[#C84F32] px-4 text-[12px] font-medium text-white transition hover:bg-[#AE3F28] disabled:cursor-not-allowed disabled:opacity-55"
             >
               <Check className="h-4 w-4" />
-              Usar no endereço
+              Usar cidade
             </button>
           </div>
         </div>

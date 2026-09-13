@@ -56,10 +56,10 @@ function SidebarHeader({ icon, title }) {
   )
 }
 
-export default function ResumeSidebar({ form, loading, activeSection = 'cliente' }) {
+export default function ResumeSidebar({ form, loading }) {
   const navigate = useNavigate()
 
-  const clienteDone = form.cliente.trim().length >= 3
+  const clienteDone = form.cliente.trim().length >= 3 && Boolean(form.cidade.trim())
   const tipoDone = form.tipo === 'Outro' ? Boolean(form.tipoCustom?.trim()) : Boolean(form.tipo)
   const ensaioDone = Boolean(tipoDone && form.data && form.hora && form.local)
   const pacoteDone = Boolean(
@@ -74,12 +74,7 @@ export default function ResumeSidebar({ form, loading, activeSection = 'cliente'
       : clienteDone
         ? 1
         : 0
-  const sectionStep = {
-    cliente: 0,
-    ensaio: 1,
-    pacote: 2,
-  }
-  const step = Math.max(completedStep, sectionStep[activeSection] ?? 0)
+  const step = completedStep
   const tipoLabel = form.tipo === 'Outro' ? form.tipoCustom || '—' : form.tipo || '—'
 
   const clienteRows = [
@@ -198,7 +193,7 @@ export default function ResumeSidebar({ form, loading, activeSection = 'cliente'
             ))}
           </div>
 
-          <div className="mt-4 flex items-center justify-between gap-4 rounded-[10px] border border-[var(--gold-border)] bg-[var(--gold-dim)] px-4 py-3">
+          <div className="mt-4 flex items-center justify-between gap-4 rounded-[10px] border border-[var(--gold-border)] bg-[var(--black-dim)] px-4 py-3">
             <span className="text-[12px] text-[var(--text)]">Valor total</span>
             <span className="font-serif text-[20px] font-light text-[var(--gold)]">
               {fmtMoney(form.valor)}

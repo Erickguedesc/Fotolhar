@@ -2,6 +2,7 @@ package com.fotolhar.repository;
 
 import com.fotolhar.model.Ensaio;
 import com.fotolhar.enums.StatusEnsaio;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
@@ -21,6 +22,7 @@ public interface EnsaioRepository extends JpaRepository<Ensaio, UUID>,
 
     Optional<Ensaio> findByIdAndClienteUsuarioId(UUID id, UUID usuarioId);
 
+    @EntityGraph(attributePaths = "cliente")
     List<Ensaio> findByClienteUsuarioId(UUID usuarioId);
 
     List<Ensaio> findByClienteUsuarioIdAndDataEnsaioBetweenAndStatusNotOrderByDataEnsaioAsc(

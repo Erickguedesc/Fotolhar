@@ -48,11 +48,12 @@ export default function DashboardStats({ dashboard }) {
             valor: ensaiosEsteMes,
             descricao: 'agendados e realizados',
             footerType: 'progress',
-            footerLabel: totalEnsaios > 0 ? `${percentEnsaiosMes}% dos ensaios ativos` : 'Sem ensaios ativos',
+            footerLabel: totalEnsaios > 0 ? `${percentEnsaiosMes}% dos ensaios cadastrados` : 'Sem ensaios cadastrados',
             footerMeta: `${totalEnsaios} no total`,
             progress: percentEnsaiosMes,
+            barColor: '#C84F32',
             icon: CalendarDays,
-            to: `/ensaios?${mesAtualParams}`,
+            to: `/ensaios?${mesAtualParams}&grupo=todos`,
         },
         {
             titulo: 'Em andamento',
@@ -61,8 +62,9 @@ export default function DashboardStats({ dashboard }) {
             footerType: andamentoTotal > 0 ? 'action' : 'neutral',
             footerLabel: andamentoTotal > 0 ? `${andamentoTotal} em fluxo ativo` : 'Nenhum ensaio ativo',
             footerMeta: andamentoTotal > 0 ? 'Acompanhar' : '',
+            barColor: '#C84F32',
             icon: Activity,
-            to: '/ensaios?grupo=ativos',
+            to: '/ensaios?grupo=andamento',
         },
         {
             titulo: 'Seleções recebidas',
@@ -71,6 +73,7 @@ export default function DashboardStats({ dashboard }) {
             footerType: selecoesEnviadas > 0 ? 'action' : 'neutral',
             footerLabel: selecoesEnviadas > 0 ? `${selecoesEnviadas} aguardando revisão` : 'Sem alterações',
             footerMeta: selecoesEnviadas > 0 ? 'Revisar' : '',
+            barColor: '#C84F32',
             icon: CheckCircle2,
             to: '/ensaios?status=EM_SELECAO',
         },
@@ -81,8 +84,9 @@ export default function DashboardStats({ dashboard }) {
             footerType: entregasMes > 0 ? 'action' : 'neutral',
             footerLabel: entregasMes > 0 ? `${entregasMes} entrega concluida` : 'Nenhuma entrega no mês',
             footerMeta: entregasMes > 0 ? 'Ver finalizados' : '',
+            barColor: '#C84F32',
             icon: PackageCheck,
-            to: '/ensaios?status=FINALIZADO',
+            to: `/ensaios?${mesAtualParams}&status=FINALIZADO`,
         },
     ]
 
@@ -112,7 +116,7 @@ export default function DashboardStats({ dashboard }) {
                         </button>
                     </div>
 
-                    <h2 className="mt-7 font-serif text-5xl font-light leading-none text-[var(--gold)]">
+                    <h2 className="theme-title mt-7 text-5xl font-normal leading-none">
                         {showValue
                             ? receitaEstimada > 0 ? formatarMoeda(receitaEstimada) : 'Sem previsao'
                             : 'R$ -----'}
@@ -144,6 +148,7 @@ function MiniStatCard({
     footerLabel,
     footerMeta,
     progress = 0,
+    barColor = 'var(--gold)',
     icon: Icon,
     to,
 }) {
@@ -175,8 +180,11 @@ function MiniStatCard({
                     <div>
                         <div className="h-2 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--text-muted)_16%,transparent)]">
                             <span
-                                className="block h-full rounded-full bg-[var(--gold)]"
-                                style={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
+                                className="block h-full rounded-full"
+                                style={{
+                                    width: `${Math.min(Math.max(progress, 0), 100)}%`,
+                                    backgroundColor: barColor,
+                                }}
                             />
                         </div>
 

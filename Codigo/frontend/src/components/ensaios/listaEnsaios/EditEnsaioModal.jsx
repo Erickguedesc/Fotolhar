@@ -4,7 +4,6 @@ import { Map, MapPin } from 'lucide-react'
 import BaseModal from './BaseModal'
 import { formatDateTimeLocal, TIPO_OPTIONS, toApiDateTime } from './ensaioHelpers'
 import LocationMapModal from '../../ui/LocationMapModal'
-import { ESTADOS_BRASILEIROS } from '../../../utils/brasil'
 import {
   interpretarTextoLocalizacao,
   montarConsultaMapa,
@@ -85,20 +84,17 @@ export default function EditEnsaioModal({
 
   const mapInitialQuery = useMemo(
     () => montarConsultaMapa({
-      enderecoCompleto: form?.enderecoCompleto,
       cidade: form?.cidadeEnsaio,
-      estado: form?.estadoEnsaio,
-      local: form?.local,
     }),
-    [form?.cidadeEnsaio, form?.enderecoCompleto, form?.estadoEnsaio, form?.local],
+    [form?.cidadeEnsaio],
   )
 
   const handleUseLocationFromMap = (value) => {
     const parsed = interpretarTextoLocalizacao(value)
 
-    change('enderecoCompleto', value)
-    if (parsed.cidade) change('cidadeEnsaio', parsed.cidade)
-    if (parsed.estado) change('estadoEnsaio', parsed.estado)
+    change('cidadeEnsaio', parsed.cidade || value)
+    change('estadoEnsaio', parsed.estado || '')
+    change('enderecoCompleto', '')
 
     setMapOpen(false)
   }
@@ -285,41 +281,13 @@ export default function EditEnsaioModal({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label>
                 <span className={labelClass}>Cidade do ensaio</span>
-                <input
-                  value={form.cidadeEnsaio}
-                  onChange={(event) => change('cidadeEnsaio', event.target.value)}
-                  className={inputClass}
-                  placeholder="Digite a cidade"
-                />
-              </label>
-
-              <label>
-                <span className={labelClass}>Estado do ensaio</span>
-                <select
-                  value={form.estadoEnsaio}
-                  onChange={(event) => change('estadoEnsaio', event.target.value)}
-                  className={inputClass}
-                >
-                  <option value="">Selecione o estado</option>
-                  {ESTADOS_BRASILEIROS.map((estado) => (
-                    <option key={estado.uf} value={estado.uf}>
-                      {estado.nome}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <label>
-                <span className={labelClass}>Endereço completo</span>
                 <div className="flex min-h-[42px] overflow-hidden rounded-lg border border-[var(--border)] bg-white transition focus-within:border-[var(--gold-border)] focus-within:bg-[var(--gold-dim)]">
                   <Map className="ml-3.5 mt-3 h-4 w-4 flex-shrink-0 text-[var(--text-muted)]" strokeWidth={1.8} />
                   <input
-                    value={form.enderecoCompleto}
-                    onChange={(event) => change('enderecoCompleto', event.target.value)}
+                    value={form.cidadeEnsaio}
+                    onChange={(event) => change('cidadeEnsaio', event.target.value)}
                     className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-[13px] outline-none"
-                    placeholder="Opcional, se quiser rota exata"
+                    placeholder="Digite a cidade e estado"
                   />
                   <button
                     type="button"

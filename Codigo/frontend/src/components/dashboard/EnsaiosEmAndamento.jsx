@@ -83,7 +83,7 @@ export default function EnsaiosEmAndamento({
 
                     <div className="text-center">
                         <Link
-                            to="/ensaios?grupo=ativos"
+                            to="/ensaios?grupo=andamento"
                             className="theme-muted inline-flex items-center gap-2 text-sm transition hover:text-[var(--gold)]"
                         >
                             Ver todos os ensaios em andamento

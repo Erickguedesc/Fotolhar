@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -218,6 +219,151 @@ export default function NotificationBell() {
     setAllNotificationsOpen(true)
   }
 
+  const allNotificationsModal = allNotificationsOpen ? (
+    <div className="fixed inset-0 z-[520] flex items-center justify-center bg-[#1F1F21]/35 px-4 py-6 backdrop-blur-sm">
+      <section className="flex max-h-[min(760px,calc(100vh-48px))] w-full max-w-[620px] flex-col overflow-hidden rounded-[18px] border border-[#E8E3DF] bg-white shadow-[0_28px_80px_rgba(31,31,33,0.18)]">
+        <div className="flex shrink-0 items-center justify-between gap-5 border-b border-[#E8E3DF] px-6 py-5 max-sm:px-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] text-[#D95732]">
+              <Bell size={29} strokeWidth={1.6} />
+            </span>
+
+            <div className="min-w-0">
+              <h2 className="text-[22px] font-semibold leading-tight text-[#1F1F21]">
+                Todas as notificações
+              </h2>
+              <p className="mt-1 text-sm text-[#6F6D6B]">
+                {total
+                  ? `${total} alerta${total === 1 ? '' : 's'}${urgentes ? ` · ${urgentes} urgente${urgentes === 1 ? '' : 's'}` : ''}`
+                  : 'Tudo em dia por aqui'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setAllNotificationsOpen(false)}
+            title="Fechar notificações"
+            aria-label="Fechar notificações"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#E8E3DF] bg-white text-[#6F6D6B] transition hover:border-[#D95732] hover:text-[#D95732]"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 max-sm:px-4">
+          {total === 0 ? (
+            <div className="px-4 py-14 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[14px] bg-[#E7F8EF] text-[#16A56E]">
+                <CheckCircle2 size={22} />
+              </div>
+
+              <p className="mt-3 text-sm font-semibold text-[#1F1F21]">
+                Nenhuma notificação
+              </p>
+              <p className="mx-auto mt-1.5 max-w-[300px] text-xs leading-5 text-[#6F6D6B]">
+                Alertas importantes aparecem aqui quando algum ensaio precisa de atenção.
+              </p>
+            </div>
+          ) : (
+            notificacoes.map((notificacao) => {
+              const config = CONFIG[notificacao.tipo] || CONFIG.STATUS_PARADO
+              const Icon = config.icon
+              const dateLabel = formatDate(notificacao.dataReferencia)
+
+              return (
+                <button
+                  key={notificacao.chave}
+                  type="button"
+                  onClick={() => handleOpenNotification(notificacao)}
+                  className="group grid w-full grid-cols-[4px_58px_minmax(0,1fr)_58px] gap-4 border-b border-[#EEEAE7] py-5 text-left transition last:border-b-0 hover:bg-[#FFF9F6] max-sm:grid-cols-[3px_46px_minmax(0,1fr)_48px] max-sm:gap-3"
+                >
+                  <span className={`my-1 block rounded-full ${config.line}`} />
+
+                  <span className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${config.iconBg} ${config.accent} max-sm:h-11 max-sm:w-11`}>
+                    <Icon size={24} strokeWidth={1.7} />
+                  </span>
+
+                  <span className="min-w-0">
+                    <span className="flex items-center justify-between gap-3">
+                      <strong className="block text-[16px] font-semibold leading-5 text-[#1F1F21] max-sm:text-[14px]">
+                        {notificacao.titulo}
+                      </strong>
+
+                      <span className={`flex shrink-0 items-center gap-2 text-xs font-medium ${config.accent} max-sm:hidden`}>
+                        {formatRelativeTime(notificacao.dataReferencia)}
+                        <span className={`h-2 w-2 rounded-full ${config.dot}`} />
+                      </span>
+                    </span>
+
+                    <span className="mt-2 block text-[13px] leading-5 text-[#3F3D3A]">
+                      {notificacao.descricao}
+                    </span>
+
+                    <span className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-[#6F6D6B]">
+                      <span className={`rounded-full px-2.5 py-1 font-medium ${config.chip}`}>
+                        {prioridadeLabel[notificacao.prioridade] || 'Info'}
+                      </span>
+
+                      {notificacao.clienteNome && (
+                        <>
+                          <span className="h-4 w-px bg-[#D8D2CD]" />
+                          <span className="min-w-0 truncate">{notificacao.clienteNome}</span>
+                        </>
+                      )}
+
+                      {dateLabel && (
+                        <>
+                          <span className="h-4 w-px bg-[#D8D2CD]" />
+                          <span className="inline-flex items-center gap-2">
+                            <CalendarDays size={13} />
+                            {dateLabel}
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  </span>
+
+                  <span className="flex items-center justify-end gap-1 text-[#6F6D6B]">
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      title="Remover notificação"
+                      aria-label="Remover notificação"
+                      onClick={(event) => handleDismissNotification(event, notificacao)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          handleDismissNotification(event, notificacao)
+                        }
+                      }}
+                      className="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[#F8EDE8] hover:text-[#D95732] max-sm:h-7 max-sm:w-7"
+                    >
+                      <X size={15} />
+                    </span>
+                    <ChevronRight size={21} strokeWidth={1.7} className="transition group-hover:text-[#D95732]" />
+                  </span>
+                </button>
+              )
+            })
+          )}
+        </div>
+
+        {total > 0 && (
+          <div className="flex shrink-0 justify-end border-t border-[#E8E3DF] px-6 py-4 max-sm:px-4">
+            <button
+              type="button"
+              disabled={markAllLoading}
+              onClick={handleMarkAllAsRead}
+              className="rounded-full border border-[#E8E3DF] bg-white px-5 py-2.5 text-sm font-semibold text-[#D95732] transition hover:border-[#D95732] hover:bg-[#F8EDE8] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {markAllLoading ? 'Marcando...' : 'Marcar todas como lidas'}
+            </button>
+          </div>
+        )}
+      </section>
+    </div>
+  ) : null
+
   return (
     <div ref={containerRef} className="relative z-[220] mr-3 flex-shrink-0">
       <button
@@ -230,7 +376,7 @@ export default function NotificationBell() {
         <Bell size={21} strokeWidth={1.9} />
 
         {total > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-[#D95732] px-1.5 text-[11px] font-bold leading-none text-white shadow-[0_8px_18px_rgba(217,87,50,0.28)]">
+          <span className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-[#D95732] px-1.5 text-[11px] font-bold leading-none !text-white shadow-[0_8px_18px_rgba(217,87,50,0.28)]">
             {total > 9 ? '9+' : total}
           </span>
         )}
@@ -385,150 +531,7 @@ export default function NotificationBell() {
         </div>
       )}
 
-      {allNotificationsOpen && (
-        <div className="fixed inset-0 z-[520] flex items-center justify-center bg-[#1F1F21]/35 px-4 py-6 backdrop-blur-sm">
-          <section className="flex max-h-[min(760px,calc(100vh-48px))] w-full max-w-[620px] flex-col overflow-hidden rounded-[18px] border border-[#E8E3DF] bg-white shadow-[0_28px_80px_rgba(31,31,33,0.18)]">
-            <div className="flex shrink-0 items-center justify-between gap-5 border-b border-[#E8E3DF] px-6 py-5 max-sm:px-4">
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] text-[#D95732]">
-                  <Bell size={29} strokeWidth={1.6} />
-                </span>
-
-                <div className="min-w-0">
-                  <h2 className="text-[22px] font-semibold leading-tight text-[#1F1F21]">
-                    Todas as notificações
-                  </h2>
-                  <p className="mt-1 text-sm text-[#6F6D6B]">
-                    {total
-                      ? `${total} alerta${total === 1 ? '' : 's'}${urgentes ? ` · ${urgentes} urgente${urgentes === 1 ? '' : 's'}` : ''}`
-                      : 'Tudo em dia por aqui'}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setAllNotificationsOpen(false)}
-                title="Fechar notificações"
-                aria-label="Fechar notificações"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#E8E3DF] bg-white text-[#6F6D6B] transition hover:border-[#D95732] hover:text-[#D95732]"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 max-sm:px-4">
-              {total === 0 ? (
-                <div className="px-4 py-14 text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[14px] bg-[#E7F8EF] text-[#16A56E]">
-                    <CheckCircle2 size={22} />
-                  </div>
-
-                  <p className="mt-3 text-sm font-semibold text-[#1F1F21]">
-                    Nenhuma notificação
-                  </p>
-                  <p className="mx-auto mt-1.5 max-w-[300px] text-xs leading-5 text-[#6F6D6B]">
-                    Alertas importantes aparecem aqui quando algum ensaio precisa de atenção.
-                  </p>
-                </div>
-              ) : (
-                notificacoes.map((notificacao) => {
-                  const config = CONFIG[notificacao.tipo] || CONFIG.STATUS_PARADO
-                  const Icon = config.icon
-                  const dateLabel = formatDate(notificacao.dataReferencia)
-
-                  return (
-                    <button
-                      key={notificacao.chave}
-                      type="button"
-                      onClick={() => handleOpenNotification(notificacao)}
-                      className="group grid w-full grid-cols-[4px_58px_minmax(0,1fr)_58px] gap-4 border-b border-[#EEEAE7] py-5 text-left transition last:border-b-0 hover:bg-[#FFF9F6] max-sm:grid-cols-[3px_46px_minmax(0,1fr)_48px] max-sm:gap-3"
-                    >
-                      <span className={`my-1 block rounded-full ${config.line}`} />
-
-                      <span className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${config.iconBg} ${config.accent} max-sm:h-11 max-sm:w-11`}>
-                        <Icon size={24} strokeWidth={1.7} />
-                      </span>
-
-                      <span className="min-w-0">
-                        <span className="flex items-center justify-between gap-3">
-                          <strong className="block text-[16px] font-semibold leading-5 text-[#1F1F21] max-sm:text-[14px]">
-                            {notificacao.titulo}
-                          </strong>
-
-                          <span className={`flex shrink-0 items-center gap-2 text-xs font-medium ${config.accent} max-sm:hidden`}>
-                            {formatRelativeTime(notificacao.dataReferencia)}
-                            <span className={`h-2 w-2 rounded-full ${config.dot}`} />
-                          </span>
-                        </span>
-
-                        <span className="mt-2 block text-[13px] leading-5 text-[#3F3D3A]">
-                          {notificacao.descricao}
-                        </span>
-
-                        <span className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-[#6F6D6B]">
-                          <span className={`rounded-full px-2.5 py-1 font-medium ${config.chip}`}>
-                            {prioridadeLabel[notificacao.prioridade] || 'Info'}
-                          </span>
-
-                          {notificacao.clienteNome && (
-                            <>
-                              <span className="h-4 w-px bg-[#D8D2CD]" />
-                              <span className="min-w-0 truncate">{notificacao.clienteNome}</span>
-                            </>
-                          )}
-
-                          {dateLabel && (
-                            <>
-                              <span className="h-4 w-px bg-[#D8D2CD]" />
-                              <span className="inline-flex items-center gap-2">
-                                <CalendarDays size={13} />
-                                {dateLabel}
-                              </span>
-                            </>
-                          )}
-                        </span>
-                      </span>
-
-                      <span className="flex items-center justify-end gap-1 text-[#6F6D6B]">
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          title="Remover notificação"
-                          aria-label="Remover notificação"
-                          onClick={(event) => handleDismissNotification(event, notificacao)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              handleDismissNotification(event, notificacao)
-                            }
-                          }}
-                          className="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[#F8EDE8] hover:text-[#D95732] max-sm:h-7 max-sm:w-7"
-                        >
-                          <X size={15} />
-                        </span>
-                        <ChevronRight size={21} strokeWidth={1.7} className="transition group-hover:text-[#D95732]" />
-                      </span>
-                    </button>
-                  )
-                })
-              )}
-            </div>
-
-            {total > 0 && (
-              <div className="flex shrink-0 justify-end border-t border-[#E8E3DF] px-6 py-4 max-sm:px-4">
-                <button
-                  type="button"
-                  disabled={markAllLoading}
-                  onClick={handleMarkAllAsRead}
-                  className="rounded-full border border-[#E8E3DF] bg-white px-5 py-2.5 text-sm font-semibold text-[#D95732] transition hover:border-[#D95732] hover:bg-[#F8EDE8] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {markAllLoading ? 'Marcando...' : 'Marcar todas como lidas'}
-                </button>
-              </div>
-            )}
-          </section>
-        </div>
-      )}
+      {allNotificationsModal ? createPortal(allNotificationsModal, document.body) : null}
     </div>
   )
 }

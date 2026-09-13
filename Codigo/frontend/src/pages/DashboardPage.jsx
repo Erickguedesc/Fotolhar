@@ -7,6 +7,8 @@ import {
     CalendarDays,
     Camera,
     CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
     Clock3,
     DollarSign,
     Eye,
@@ -16,7 +18,10 @@ import {
     PackageCheck,
     PencilLine,
     Plus,
+    RefreshCw,
     Sparkles,
+    TrendingDown,
+    TrendingUp,
     Users,
     X,
     Zap,
@@ -32,8 +37,11 @@ import AppTopControls from '../components/layout/AppTopControls'
 import { dashboardService } from '../services/dashboardService'
 import { ensaiosService } from '../services/ensaiosService'
 
-const NOTICE_ROTATION_INTERVAL_MS = 10 * 60 * 1000
+const DASHBOARD_MESSAGES_CYCLE_STORAGE_KEY = 'fotolhar-dashboard-messages-cycle'
+const DASHBOARD_INSIGHT_SNAPSHOT_STORAGE_KEY = 'fotolhar-dashboard-insight-snapshot'
+const DASHBOARD_INSIGHT_ACTIVE_STORAGE_KEY = 'fotolhar-dashboard-insight-active'
 const FORECAST_VALUE_VISIBILITY_STORAGE_KEY = 'fotolhar-dashboard-forecast-value-visible'
+const REVENUE_VIEW_STORAGE_KEY = 'fotolhar-dashboard-revenue-view'
 const REGION_VISIBLE_LIMIT = 5
 const REVENUE_VISIBLE_LIMIT = 5
 const DEFAULT_REVENUE_PERIOD = 'ESTE_MES'
@@ -136,13 +144,13 @@ function sortEnsaiosPorHorario(ensaios = []) {
 
 function getEnsaiosHoje(dashboard, agenda, today, ensaiosHojeOverride) {
     if (Array.isArray(ensaiosHojeOverride)) {
-        return sortEnsaiosPorHorario(getEnsaiosDoDia(ensaiosHojeOverride, today))
+        return getEnsaiosAgendadosHoje(getEnsaiosDoDia(ensaiosHojeOverride, today))
     }
 
     const ensaiosDoDia = Array.isArray(dashboard?.ensaiosDoDia) ? dashboard.ensaiosDoDia : []
     const fallback = getEnsaiosDoDia(agenda, today)
 
-    return sortEnsaiosPorHorario(getEnsaiosDoDia(ensaiosDoDia.length ? ensaiosDoDia : fallback, today))
+    return getEnsaiosAgendadosHoje(getEnsaiosDoDia(ensaiosDoDia.length ? ensaiosDoDia : fallback, today))
 }
 
 function getEnsaiosAgendadosHoje(ensaiosHoje = []) {
@@ -175,7 +183,7 @@ function formatarResumoEnsaiosHoje(ensaiosHoje = [], limit = Infinity) {
 }
 
 function getResumoHoje(ensaios = [], today) {
-    const ensaiosHoje = sortEnsaiosPorHorario(getEnsaiosDoDia(ensaios, today))
+    const ensaiosHoje = getEnsaiosAgendadosHoje(getEnsaiosDoDia(ensaios, today))
 
     if (!ensaiosHoje.length) return 'Hoje: nenhum ensaio'
 
@@ -233,10 +241,17 @@ export default function DashboardPage() {
     const [receitaPorTipo, setReceitaPorTipo] = useState([])
     const [receitaLoading, setReceitaLoading] = useState(false)
     const [receitaErro, setReceitaErro] = useState('')
+    const [mensagens, setMensagens] = useState(null)
+    const [mensagensLoading, setMensagensLoading] = useState(true)
+    const [mensagensErro, setMensagensErro] = useState(false)
     const [loading, setLoading] = useState(true)
     const [erro, setErro] = useState('')
     const receitaRequestRef = useRef(0)
     const abrirTodasPendencias = new URLSearchParams(location.search).get('pendencias') === '1'
+    const quickTipContext = useMemo(() => ({
+        ensaiosDoMes: dashboard?.ensaiosEsteMes,
+        ensaiosAgendados: Number(dashboard?.pipelineStatus?.AGENDADO || 0),
+    }), [dashboard])
 
     useEffect(() => {
         let active = true
@@ -284,6 +299,35 @@ export default function DashboardPage() {
         }
 
         carregarDashboard()
+
+        return () => {
+            active = false
+        }
+    }, [])
+
+    useEffect(() => {
+        let active = true
+
+        async function carregarMensagens() {
+            try {
+                setMensagensLoading(true)
+                setMensagensErro(false)
+                const resultado = await dashboardService.buscarMensagens()
+                const dados = resultado?.data ?? resultado
+
+                if (active) setMensagens(Array.isArray(dados?.mensagens) ? dados.mensagens : [])
+            } catch (error) {
+                console.error('[Dashboard] Erro ao carregar mensagens inteligentes:', error?.response?.data || error)
+                if (active) {
+                    setMensagens([])
+                    setMensagensErro(true)
+                }
+            } finally {
+                if (active) setMensagensLoading(false)
+            }
+        }
+
+        carregarMensagens()
 
         return () => {
             active = false
@@ -341,7 +385,7 @@ export default function DashboardPage() {
 
     return (
         <main className="min-h-screen bg-[#FCFCFD] text-[#1F1F21] antialiased">
-            <Header />
+            <Header quickTipContext={quickTipContext} />
 
             <section className="min-w-0 px-4 pb-6 pt-[84px] sm:px-7 lg:px-9 lg:py-6">
                 {loading ? (
@@ -356,6 +400,9 @@ export default function DashboardPage() {
                         onReceitaPeriodoChange={setReceitaPeriodo}
                         ensaiosHojeOverride={ensaiosHojeOverride}
                         abrirTodasPendencias={abrirTodasPendencias}
+                        mensagens={mensagens}
+                        mensagensLoading={mensagensLoading}
+                        mensagensErro={mensagensErro}
                     />
                 )}
             </section>
@@ -390,6 +437,9 @@ function DashboardContent({
     onReceitaPeriodoChange,
     ensaiosHojeOverride,
     abrirTodasPendencias = false,
+    mensagens,
+    mensagensLoading,
+    mensagensErro,
 }) {
     const hoje = useMemo(() => new Date(), [])
     const usuarioNome = localStorage.getItem('usuarioNome') || ''
@@ -427,10 +477,9 @@ function DashboardContent({
             </div>
 
             <DashboardTodayNotice
-                dashboard={dashboard}
-                agenda={agenda}
-                hoje={hoje}
-                ensaiosHoje={ensaiosHoje}
+                mensagens={mensagens}
+                loading={mensagensLoading}
+                erro={mensagensErro}
             />
 
             <div className="mt-5 grid items-start gap-4 xl:grid-cols-[25fr_45fr_30fr]">
@@ -511,6 +560,7 @@ function getDashboardNotice(dashboard, agenda, hoje, ensaiosHoje, rotationSlot =
     const receitaEstimada = Number(dashboard?.receitaEstimada || 0)
     const ensaiosEsteMes = Number(dashboard?.ensaiosEsteMes || 0)
     const finalizadosMes = Number(dashboard?.ensaiosFinalizadosMes || 0)
+    const mesAtualParams = getMesAtualParams()
     const criticalNotices = []
     const routineNotices = []
 
@@ -528,7 +578,7 @@ function getDashboardNotice(dashboard, agenda, hoje, ensaiosHoje, rotationSlot =
                 : `${title}: ${resumoEnsaiosHoje}.`,
             to: totalEnsaiosAgendadosHoje === 1 && ensaiosAgendadosHoje[0]?.id
                 ? `/ensaios/${ensaiosAgendadosHoje[0].id}`
-                : '/ensaios?view=calendar',
+                : '/ensaios?view=calendar&grupo=todos',
         })
     }
 
@@ -640,7 +690,7 @@ function getDashboardNotice(dashboard, agenda, hoje, ensaiosHoje, rotationSlot =
             icon: Zap,
             title: 'Ensaios em andamento',
             text: 'Acompanhe os ensaios em andamento e atualize etapas quando houver avanço.',
-            to: '/ensaios?grupo=ativos',
+            to: '/ensaios?grupo=andamento',
         })
     }
 
@@ -651,7 +701,7 @@ function getDashboardNotice(dashboard, agenda, hoje, ensaiosHoje, rotationSlot =
             text: proximoEnsaio && proximaData
                 ? `Próximo ensaio em ${getDaysUntilLabel(proximoEnsaio.dataEnsaio).toLowerCase()}: ${getTipoLabel(proximoEnsaio)} com ${getFirstName(proximoEnsaio.clienteNome) || 'cliente'}.`
                 : 'Revise os próximos ensaios e confirme detalhes de horário, local e contrato.',
-            to: '/ensaios?view=calendar',
+            to: '/ensaios?view=calendar&grupo=todos',
         })
     }
 
@@ -677,7 +727,7 @@ function getDashboardNotice(dashboard, agenda, hoje, ensaiosHoje, rotationSlot =
             text: finalizadosMes > 1
                 ? `${finalizadosMes} entregas já foram finalizadas neste mês. Confira os ensaios concluídos.`
                 : 'Uma entrega foi finalizada neste mês. Confira os detalhes do ensaio concluído.',
-            to: '/ensaios?status=FINALIZADO',
+            to: `/ensaios?${mesAtualParams}&status=FINALIZADO`,
         })
     }
 
@@ -695,7 +745,7 @@ function getDashboardNotice(dashboard, agenda, hoje, ensaiosHoje, rotationSlot =
             icon: PackageCheck,
             title: 'Histórico organizado',
             text: 'Seus ensaios finalizados estão em dia. Vale revisar entregas antigas e manter o portfólio atualizado.',
-            to: '/ensaios?status=FINALIZADO',
+            to: `/ensaios?${mesAtualParams}&status=FINALIZADO`,
         })
     }
 
@@ -727,50 +777,409 @@ function getDashboardNotice(dashboard, agenda, hoje, ensaiosHoje, rotationSlot =
     return routineNotices[rotationSlot % routineNotices.length]
 }
 
-function DashboardTodayNotice({ dashboard, agenda, hoje, ensaiosHoje }) {
-    const [rotationSlot, setRotationSlot] = useState(() => Math.floor(Date.now() / NOTICE_ROTATION_INTERVAL_MS))
-    const notice = getDashboardNotice(dashboard, agenda, hoje, ensaiosHoje, rotationSlot)
-    const NoticeIcon = notice.icon || Sparkles
+function getDashboardInsightSnapshot(dashboard) {
+    const pipeline = dashboard?.pipelineStatus || {}
+
+    return {
+        selecoesEnviadas: Number(dashboard?.selecoesEnviadas || 0),
+        ensaiosRealizados: Number(pipeline.REALIZADO || 0),
+        entregasNoMes: Number(dashboard?.ensaiosFinalizadosMes || 0),
+    }
+}
+
+function getDashboardNoveltyInsights(snapshot, previousSnapshot) {
+    if (!previousSnapshot) return []
+
+    const novidades = []
+    const novasSelecoes = snapshot.selecoesEnviadas - Number(previousSnapshot.selecoesEnviadas || 0)
+    const novosRealizados = snapshot.ensaiosRealizados - Number(previousSnapshot.ensaiosRealizados || 0)
+    const novasEntregas = snapshot.entregasNoMes - Number(previousSnapshot.entregasNoMes || 0)
+
+    if (novasSelecoes > 0) {
+        novidades.push({
+            id: 'NOVIDADE_SELECAO_RECEBIDA',
+            icon: CheckCircle2,
+            tone: 'success',
+            title: novasSelecoes === 1 ? 'Seleção recebida' : 'Seleções recebidas',
+            text: novasSelecoes === 1
+                ? 'Uma cliente enviou novas fotos para sua revisão.'
+                : `${novasSelecoes} clientes enviaram novas fotos para sua revisão.`,
+        })
+    }
+
+    if (novosRealizados > 0) {
+        novidades.push({
+            id: 'NOVIDADE_ENSAIO_REALIZADO',
+            icon: Camera,
+            tone: 'success',
+            title: novosRealizados === 1 ? 'Ensaio realizado' : 'Ensaios realizados',
+            text: novosRealizados === 1
+                ? 'Um novo trabalho entrou nas próximas etapas de produção.'
+                : `${novosRealizados} novos trabalhos entraram nas próximas etapas de produção.`,
+        })
+    }
+
+    if (novasEntregas > 0) {
+        novidades.push({
+            id: 'NOVIDADE_ENTREGA_CONCLUIDA',
+            icon: PackageCheck,
+            tone: 'success',
+            title: novasEntregas === 1 ? 'Trabalho entregue' : 'Trabalhos entregues',
+            text: novasEntregas === 1
+                ? 'Uma nova entrega foi concluída neste mês.'
+                : `${novasEntregas} novas entregas foram concluídas neste mês.`,
+        })
+    }
+
+    return novidades
+}
+
+function getDashboardInsights(dashboard, ensaiosHoje, novidades = []) {
+    const insights = [...novidades]
+    const pendenciasTotal = dashboard?.pendenciasTotal
+    const ensaiosAgendadosHoje = getEnsaiosAgendadosHoje(ensaiosHoje)
+    const totalHoje = ensaiosAgendadosHoje.length
+    const totalSemana = Number(dashboard?.ensaiosProximosSeteDias || 0)
+    const entregasNoMes = Number(dashboard?.ensaiosFinalizadosMes || 0)
+    const ensaiosNoMes = Number(dashboard?.ensaiosEsteMes || 0)
+    const selecoesEnviadas = Number(dashboard?.selecoesEnviadas || 0)
+    const pipeline = dashboard?.pipelineStatus || {}
+    const ensaiosRealizados = Number(pipeline.REALIZADO || 0)
+    const ensaiosEmSelecao = Number(pipeline.EM_SELECAO || 0)
+    const ensaiosEmEdicao = Number(pipeline.EM_EDICAO || 0)
+    const totalAtivosNoPipeline = ensaiosRealizados + ensaiosEmSelecao + ensaiosEmEdicao
+    const ensaiosEmAndamento = dashboard?.ensaiosEmAndamentoTotal !== null
+        && dashboard?.ensaiosEmAndamentoTotal !== undefined
+        && Number.isFinite(Number(dashboard.ensaiosEmAndamentoTotal))
+        ? Number(dashboard.ensaiosEmAndamentoTotal)
+        : totalAtivosNoPipeline
+    const tiposReceita = Array.isArray(dashboard?.receitaPorTipoEnsaio)
+        ? dashboard.receitaPorTipoEnsaio
+        : []
+    const regioes = Array.isArray(dashboard?.regioesDemanda) ? dashboard.regioesDemanda : []
+    const etapasFluxo = Array.isArray(dashboard?.desempenhoFluxo)
+        ? dashboard.desempenhoFluxo
+        : []
+
+    if (pendenciasTotal !== null && pendenciasTotal !== undefined && Number(pendenciasTotal) === 0) {
+        insights.push({
+            id: 'TUDO_EM_DIA',
+            icon: CheckCircle2,
+            tone: 'success',
+            title: 'Tudo em dia',
+            text: 'Nenhuma pendência precisa da sua atenção neste momento.',
+        })
+    }
+
+    if (totalHoje === 0 && totalSemana >= 4) {
+        insights.push({
+            id: 'SEMANA_MOVIMENTADA',
+            icon: CalendarDays,
+            tone: 'neutral',
+            title: 'Semana movimentada',
+            text: `Você tem ${totalSemana} ensaios programados para esta semana.`,
+        })
+    } else if (totalHoje === 0) {
+        insights.push({
+            id: 'AGENDA_TRANQUILA',
+            icon: CalendarDays,
+            tone: 'neutral',
+            title: 'Agenda tranquila hoje',
+            text: 'Você não possui ensaios programados para hoje.',
+        })
+    } else {
+        insights.push({
+            id: 'AGENDA_HOJE',
+            icon: CalendarDays,
+            tone: 'neutral',
+            title: totalHoje >= 3 ? 'Dia movimentado' : 'Agenda do dia',
+            text: `Você possui ${totalHoje} ensaio${totalHoje === 1 ? '' : 's'} programado${totalHoje === 1 ? '' : 's'} para hoje.`,
+        })
+    }
+
+    if (selecoesEnviadas > 0) {
+        insights.push({
+            id: 'SELECOES_PARA_REVISAR',
+            icon: CheckCircle2,
+            tone: 'neutral',
+            title: selecoesEnviadas === 1 ? 'Seleção para revisar' : 'Seleções para revisar',
+            text: selecoesEnviadas === 1
+                ? 'Uma cliente já enviou suas escolhas e aguarda sua revisão.'
+                : `${selecoesEnviadas} clientes já enviaram suas escolhas e aguardam sua revisão.`,
+        })
+    }
+
+    if (ensaiosEmAndamento > 0) {
+        const etapasAtivas = [
+            {
+                chave: 'EM_EDICAO',
+                quantidade: ensaiosEmEdicao,
+                titulo: 'Produção concentrada em edição',
+                descricao: `${ensaiosEmEdicao} dos seus ${ensaiosEmAndamento} trabalhos ativos estão atualmente sendo editados.`,
+            },
+            {
+                chave: 'EM_SELECAO',
+                quantidade: ensaiosEmSelecao,
+                titulo: 'Produção concentrada em seleção',
+                descricao: `${ensaiosEmSelecao} dos seus ${ensaiosEmAndamento} trabalhos ativos estão na etapa de seleção de fotos.`,
+            },
+            {
+                chave: 'REALIZADO',
+                quantidade: ensaiosRealizados,
+                titulo: 'Produção após os ensaios',
+                descricao: `${ensaiosRealizados} dos seus ${ensaiosEmAndamento} trabalhos ativos estão seguindo para as próximas etapas.`,
+            },
+        ]
+        const etapaPredominante = etapasAtivas
+            .slice()
+            .sort((left, right) => right.quantidade - left.quantidade)[0]
+        const fluxoConcentrado = ensaiosEmAndamento >= 3
+            && etapaPredominante.quantidade * 2 >= ensaiosEmAndamento
+
+        insights.push(fluxoConcentrado ? {
+            id: `FLUXO_${etapaPredominante.chave}`,
+            icon: Zap,
+            tone: 'neutral',
+            title: etapaPredominante.titulo,
+            text: etapaPredominante.descricao,
+        } : {
+            id: 'PRODUCAO_EM_MOVIMENTO',
+            icon: Zap,
+            tone: 'neutral',
+            title: 'Produção em movimento',
+            text: `${ensaiosEmAndamento} ensaio${ensaiosEmAndamento === 1 ? '' : 's'} está${ensaiosEmAndamento === 1 ? '' : 'ão'} entre realização, seleção e edição.`,
+        })
+    }
+
+    if (entregasNoMes > 0) {
+        insights.push({
+            id: 'ENTREGAS_MES',
+            icon: PackageCheck,
+            tone: 'neutral',
+            title: 'Entregas avançando',
+            text: `Você já concluiu ${entregasNoMes} ensaio${entregasNoMes === 1 ? '' : 's'} neste mês.`,
+        })
+    }
+
+    if (ensaiosNoMes > 0 && entregasNoMes === 0) {
+        insights.push({
+            id: 'AGENDA_DO_MES',
+            icon: CalendarDays,
+            tone: 'neutral',
+            title: 'Mês em construção',
+            text: `Há ${ensaiosNoMes} ensaio${ensaiosNoMes === 1 ? '' : 's'} previsto${ensaiosNoMes === 1 ? '' : 's'} para este mês no estúdio.`,
+        })
+    }
+
+    const tipoLider = tiposReceita
+        .filter((item) => Number(item?.percentualReceita || 0) > 0 && Number(item?.quantidadeEnsaios || 0) > 0)
+        .slice()
+        .sort((left, right) => Number(right?.percentualReceita || 0) - Number(left?.percentualReceita || 0))[0]
+
+    if (tipoLider) {
+        const tipo = tipoLider?.tipoExibicao || getTipoLabel(tipoLider)
+        const percentual = formatarPercentual(tipoLider?.percentualReceita)
+
+        insights.push({
+            id: 'RECEITA_POR_TIPO',
+            icon: DollarSign,
+            tone: 'neutral',
+            title: 'Receita em destaque',
+            text: `${tipo} representa ${percentual} da receita registrada neste mês.`,
+        })
+    }
+
+    const principalRegiao = regioes.find((item) => Number(item?.quantidadeClientes || 0) > 0)
+
+    if (principalRegiao) {
+        const percentualPrincipal = Number(principalRegiao?.percentual || 0)
+
+        if (regioes.length >= 4 && percentualPrincipal < 50) {
+            insights.push({
+                id: 'CLIENTELA_DISTRIBUIDA',
+                icon: Users,
+                tone: 'neutral',
+                title: 'Clientela mais distribuída',
+                text: `Seus clientes cadastrados estão distribuídos em ${regioes.length} cidades.`,
+            })
+        } else {
+            insights.push({
+                id: 'REGIAO_PRINCIPAL',
+                icon: MapPin,
+                tone: 'neutral',
+                title: 'Região em destaque',
+                text: `${principalRegiao.regiao} representa ${formatarPercentual(principalRegiao.percentual)} dos clientes com cidade informada.`,
+            })
+        }
+    }
+
+    const etapaMaisLonga = etapasFluxo
+        .filter((item) => item?.mediaDias !== null && item?.mediaDias !== undefined && Number(item?.quantidadeAmostras || 0) > 0)
+        .slice()
+        .sort((left, right) => Number(right?.mediaDias || 0) - Number(left?.mediaDias || 0))[0]
+
+    if (etapaMaisLonga) {
+        insights.push({
+            id: 'FLUXO_ETAPA_MAIS_LONGA',
+            icon: Zap,
+            tone: 'neutral',
+            title: 'Etapa que exige mais tempo',
+            text: `No trecho ${etapaMaisLonga.titulo}, a média atual é de ${formatarDiasFluxo(etapaMaisLonga.mediaDias)}.`,
+        })
+    }
+
+    if (!novidades.length) {
+        insights.push({
+            id: 'SEM_NOVIDADES',
+            icon: CheckCircle2,
+            tone: 'neutral',
+            title: 'Tudo seguindo o fluxo',
+            text: 'Nenhuma nova ocorrência importante desde a última atualização.',
+        })
+    }
+
+    if (!insights.length) {
+        return [{
+            id: 'ESTUDIO_EM_UM_SO_LUGAR',
+            icon: Sparkles,
+            tone: 'neutral',
+            title: 'Seu estúdio em um só lugar',
+            text: 'Acompanhe seus ensaios, clientes e resultados pelo Fotolhar.',
+        }]
+    }
+
+    return insights
+}
+
+function DashboardTodayNotice({ mensagens, loading, erro }) {
+    const mensagensDoServidor = useMemo(
+        () => (Array.isArray(mensagens) ? mensagens.map(normalizarMensagemDashboard) : []),
+        [mensagens]
+    )
+    const mensagensElegiveis = useMemo(() => (
+        mensagensDoServidor.length
+            ? [...mensagensDoServidor, mensagemFimDoCicloDashboard()]
+            : []
+    ), [mensagensDoServidor])
+    const assinatura = mensagensElegiveis.map((mensagem) => mensagem.fingerprint).join('||')
+    const [ciclo, setCiclo] = useState(null)
 
     useEffect(() => {
-        const interval = window.setInterval(() => {
-            setRotationSlot(Math.floor(Date.now() / NOTICE_ROTATION_INTERVAL_MS))
-        }, 60000)
+        if (loading || erro) return
 
-        return () => window.clearInterval(interval)
-    }, [])
+        const proximoCiclo = prepararCicloMensagens(mensagensElegiveis)
+        setCiclo(proximoCiclo)
+        salvarCicloMensagens(proximoCiclo)
+    }, [assinatura, loading])
+
+    const mensagemAtiva = ciclo?.ativa
+        || mensagensElegiveis[0]
+        || (erro ? mensagemErroDashboard() : mensagemVaziaDashboard())
+    const visualMensagem = getVisualMensagemDashboard(mensagemAtiva?.tipo)
+    const MessageIcon = visualMensagem?.icon || Sparkles
+    const temControles = !loading && mensagensElegiveis.length > 1
+    const indicadoresVisiveis = useMemo(
+        () => getIndicadoresVisiveis(mensagensElegiveis, mensagemAtiva?.fingerprint),
+        [mensagensElegiveis, mensagemAtiva?.fingerprint]
+    )
+
+    function navegar(direction) {
+        if (!mensagensElegiveis.length) return
+
+        const cicloAtual = ciclo || prepararCicloMensagens(mensagensElegiveis)
+        if (!cicloAtual) return
+
+        const proximoCiclo = direction < 0
+            ? voltarNoCicloMensagens(cicloAtual, mensagensElegiveis)
+            : avancarNoCicloMensagens(cicloAtual, mensagensElegiveis)
+
+        setCiclo(proximoCiclo)
+        salvarCicloMensagens(proximoCiclo)
+    }
+
+    if (loading) {
+        return (
+            <section aria-label="Carregando mensagens do estúdio" className="flex min-h-[82px] items-center gap-4 rounded-[14px] border border-[#E8E3DF] bg-white px-5 py-4 shadow-[0_12px_30px_rgba(31,31,33,0.035)]">
+                <span className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-[#F0EFED]" />
+                <div className="min-w-0 flex-1 space-y-2">
+                    <span className="block h-4 w-40 animate-pulse rounded bg-[#F0EFED]" />
+                    <span className="block h-4 w-3/4 animate-pulse rounded bg-[#F0EFED]" />
+                </div>
+            </section>
+        )
+    }
 
     return (
-        <Link
-            to={notice.to}
-            title={notice.text}
-            className="flex min-h-[82px] items-center gap-4 rounded-[14px] border border-[#E8E3DF] bg-white/72 px-5 py-4 shadow-[0_12px_30px_rgba(31,31,33,0.04)] transition hover:border-[#c99a5d] hover:bg-white/82"
-        >
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#F5F3F1] text-[#C84F32]">
-                <NoticeIcon size={21} strokeWidth={1.6} />
+        <section aria-label="Insights do estúdio" className={`relative flex w-full max-w-full min-h-[82px] items-center gap-4 rounded-[14px] border border-[#E8E3DF] ${visualMensagem?.cardClassName || 'bg-white'} px-5 py-4 shadow-[0_12px_30px_rgba(31,31,33,0.035)]`}>
+            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${visualMensagem?.iconClassName || 'bg-[#F0EFED] text-[#5F5B57]'}`}>
+                <MessageIcon size={20} strokeWidth={1.7} />
             </span>
 
-            <span className="min-w-0 flex-1">
-                <strong className="block text-sm font-semibold text-[#C84F32]">
-                    {notice.title}
-                </strong>
-                <span className="mt-1 block text-sm leading-5 text-[#6F6D6B]">
-                    {notice.text}
-                </span>
-            </span>
+            <div className={`min-w-0 flex-1 ${temControles ? 'pr-[104px]' : ''}`}>
+                <strong className="block text-sm font-semibold text-[#292625]">{mensagemAtiva.titulo}</strong>
+                <p className="mt-1 text-sm leading-5 text-[#6F6D6B]">{mensagemAtiva.mensagem}</p>
+            </div>
 
-            <ArrowRight size={20} className="shrink-0 text-[#C84F32]" />
-        </Link>
+            {temControles ? (
+                <div className="absolute right-5 top-1/2 flex -translate-y-1/2 items-center gap-1" aria-label="Controles dos insights">
+                    <button type="button" onClick={() => navegar(-1)} aria-label="Insight anterior" className="flex h-7 w-7 items-center justify-center rounded-full text-[#6F6D6B] transition hover:bg-[#F7F5F2] hover:text-[#1F1F21] focus:outline-none focus:ring-2 focus:ring-[#CFCAC4]"><ChevronLeft size={16} strokeWidth={1.8} /></button>
+                    <div className="flex items-center gap-1" aria-label={`Mensagem ${ciclo?.posicao + 1 || 1} de ${mensagensElegiveis.length}`}>
+                        {indicadoresVisiveis.map((mensagem) => (
+                            <span key={mensagem.fingerprint} aria-hidden="true" className={`h-1.5 rounded-full transition-all ${mensagem.fingerprint === mensagemAtiva.fingerprint ? 'w-3 bg-[#5F5B57]' : 'w-1.5 bg-[#D6D2CD]'}`} />
+                        ))}
+                    </div>
+                    <button type="button" onClick={() => navegar(1)} aria-label="Próximo insight" className="flex h-7 w-7 items-center justify-center rounded-full text-[#6F6D6B] transition hover:bg-[#F7F5F2] hover:text-[#1F1F21] focus:outline-none focus:ring-2 focus:ring-[#CFCAC4]"><ChevronRight size={16} strokeWidth={1.8} /></button>
+                </div>
+            ) : null}
+        </section>
     )
+}
+
+function getIndicadoresVisiveis(mensagens, fingerprintAtivo) {
+    const limite = 5
+    if (mensagens.length <= limite) return mensagens
+
+    const indiceAtivo = Math.max(0, mensagens.findIndex((mensagem) => mensagem.fingerprint === fingerprintAtivo))
+    const inicio = Math.min(Math.max(0, indiceAtivo - 2), mensagens.length - limite)
+
+    return mensagens.slice(inicio, inicio + limite)
+}
+
+function getVisualMensagemDashboard(tipo) {
+    const estilos = {
+        ATUALIZACAO: { icon: RefreshCw, iconClassName: 'bg-[#F1F5F9] text-[#475569]' },
+        ATENCAO: { icon: AlertTriangle, iconClassName: 'bg-[#FAF0EC] text-[#C84F32]' },
+        OPORTUNIDADE: { icon: TrendingUp, iconClassName: 'bg-[#F1F6F2] text-[#4F7657]' },
+        INSIGHT: { icon: Sparkles, iconClassName: 'bg-[#F7F5F2] text-[#6B625C]' },
+        ENCERRAMENTO: { icon: CheckCircle2, iconClassName: 'bg-[#DDEFE0] text-[#4F7657]', cardClassName: 'bg-[#F1F6F2]' },
+    }
+
+    return estilos[tipo] || null
 }
 
 function ForecastValueCard({ dashboard }) {
     const receitaEstimada = Number(dashboard?.receitaEstimada || 0)
+    const historico = Array.isArray(dashboard?.receitaPrevistaHistorico)
+        ? dashboard.receitaPrevistaHistorico
+        : []
+    const valorMesAnterior = historico.length >= 2
+        ? Number(historico[historico.length - 2]?.valor || 0)
+        : null
+    const variacao = valorMesAnterior && valorMesAnterior > 0
+        ? ((receitaEstimada - valorMesAnterior) / valorMesAnterior) * 100
+        : null
     const [mostrarValor, setMostrarValor] = useState(() =>
         getStoredPreference(FORECAST_VALUE_VISIBILITY_STORAGE_KEY, 'true', ['true', 'false']) === 'true'
     )
     const valorFormatado = receitaEstimada > 0 ? formatarMoeda(receitaEstimada) : 'R$ 0,00'
     const ToggleIcon = mostrarValor ? Eye : EyeOff
+    const TrendIcon = variacao !== null && variacao < 0 ? TrendingDown : TrendingUp
+    const variacaoFormatada = variacao === null
+        ? ''
+        : `${variacao > 0 ? '+' : ''}${variacao.toLocaleString('pt-BR', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 1,
+        })}%`
     function toggleMostrarValor() {
         setMostrarValor((current) => {
             const next = !current
@@ -781,7 +1190,7 @@ function ForecastValueCard({ dashboard }) {
     }
 
     return (
-        <Card className="flex min-h-[220px] flex-col justify-between p-4 xl:h-[300px]">
+        <Card className="flex min-h-[220px] flex-col p-4 xl:h-[300px]">
             <div className="flex items-start justify-between gap-4">
                 <h2 className="text-[13px] font-semibold uppercase tracking-[0.015em] text-[#1F1F21]">
                     Valor previsto
@@ -793,35 +1202,103 @@ function ForecastValueCard({ dashboard }) {
                     title={mostrarValor ? 'Ocultar valor previsto' : 'Mostrar valor previsto'}
                     aria-label={mostrarValor ? 'Ocultar valor previsto' : 'Mostrar valor previsto'}
                     aria-pressed={!mostrarValor}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#E8E3DF] bg-white/72 text-[#C84F32] transition hover:border-[#C84F32] hover:bg-[#F8EDE8]"
+                    className="-mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#E8E3DF] bg-white/72 text-[#C84F32] transition hover:border-[#C84F32] hover:bg-[#F8EDE8]"
                 >
                     <ToggleIcon size={17} />
                 </button>
             </div>
 
-            <div className="py-1">
-                <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-[11px] bg-[#F8EDE8] text-[#C84F32]">
-                    <DollarSign size={22} strokeWidth={1.6} />
-                </span>
-
-                <strong className="block font-serif text-[34px] font-light leading-none text-[#C84F32] sm:text-[38px] xl:text-[34px] 2xl:text-[40px]">
+            <div className="mt-4">
+                <strong className="block text-[34px] font-normal leading-none text-[#080706] sm:text-[38px] xl:text-[34px] 2xl:text-[40px]">
                     {mostrarValor ? valorFormatado : 'R$ •••••'}
                 </strong>
 
-                <p className="mt-2 text-sm text-[#6F6D6B]">
-                    pacotes e fotos extras do mês
-                </p>
+                {mostrarValor ? (
+                    <>
+                        {variacao !== null ? (
+                            <p className={`mt-2 inline-flex items-center gap-1.5 text-xs font-semibold ${
+                                variacao < 0 ? 'text-[#A55E48]' : 'text-[#39834B]'
+                            }`}>
+                                <TrendIcon size={15} strokeWidth={2} />
+                                {variacaoFormatada}
+                                <span className="font-normal text-[#6F6D6B]">em relação ao mês anterior</span>
+                            </p>
+                        ) : (
+                            <p className="mt-2 text-xs text-[#6F6D6B]">
+                                {valorMesAnterior === 0
+                                    ? 'Sem valor previsto no mês anterior.'
+                                    : 'Ainda não há histórico suficiente para comparar.'}
+                            </p>
+                        )}
+
+                        <ForecastSparkline historico={historico} />
+                    </>
+                ) : (
+                    <p className="mt-2 text-xs text-[#6F6D6B]">Valores e tendência ocultos.</p>
+                )}
             </div>
 
             <Link
                 to="/relatorios"
-                className="flex h-9 w-full items-center justify-center gap-2 rounded-full border border-[#E8E3DF] bg-white/58 px-5 text-sm font-semibold text-[#C84F32] transition hover:border-[#C84F32] hover:bg-[#F8EDE8]"
+                className="mt-auto flex h-9 w-full items-center justify-center gap-2 rounded-full border border-[#E8E3DF] bg-white/58 px-5 text-sm font-semibold text-[#C84F32] transition hover:border-[#C84F32] hover:bg-[#F8EDE8]"
             >
                 Ver detalhes
                 <ArrowRight size={17} />
             </Link>
         </Card>
     )
+}
+
+function ForecastSparkline({ historico }) {
+    const pontos = Array.isArray(historico)
+        ? historico.map((item) => ({ mes: item?.mes, valor: Number(item?.valor || 0) }))
+        : []
+    const temHistorico = pontos.length >= 2 && pontos.some((item) => item.valor > 0)
+
+    if (!temHistorico) {
+        return <div className="mt-4 h-[58px] border-t border-[#EEEAE7]" aria-hidden="true" />
+    }
+
+    const maiorValor = Math.max(...pontos.map((item) => item.valor), 1)
+    const largura = 260
+    const altura = 52
+    const paddingX = 4
+    const paddingY = 7
+    const passoX = (largura - paddingX * 2) / (pontos.length - 1)
+    const pontosSvg = pontos.map((item, index) => {
+        const x = paddingX + passoX * index
+        const y = altura - paddingY - ((item.valor / maiorValor) * (altura - paddingY * 2))
+        return { x, y }
+    })
+    const linha = pontosSvg.map((point) => `${point.x},${point.y}`).join(' ')
+    const ultimoPonto = pontosSvg[pontosSvg.length - 1]
+    const indicesRotulo = [...new Set([0, Math.floor((pontos.length - 1) / 2), pontos.length - 1])]
+
+    return (
+        <div className="mt-3 border-t border-[#EEEAE7] pt-2">
+            <svg viewBox={`0 0 ${largura} ${altura}`} className="h-[52px] w-full" role="img" aria-label="Tendência do valor previsto nos últimos seis meses">
+                <path d={`M ${paddingX} ${altura - paddingY} H ${largura - paddingX}`} stroke="#E7E2DD" strokeWidth="1" />
+                <polyline points={linha} fill="none" stroke="#39834B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx={ultimoPonto.x} cy={ultimoPonto.y} r="3.5" fill="#39834B" stroke="#FFFFFF" strokeWidth="2" />
+            </svg>
+
+            <div className="mt-0.5 flex items-center justify-between text-[10px] text-[#8A8580]">
+                {indicesRotulo.map((index) => (
+                    <span key={pontos[index].mes || index}>{formatarMesCurto(pontos[index].mes)}</span>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+function formatarMesCurto(mes) {
+    const [ano, numeroMes] = String(mes || '').split('-').map(Number)
+
+    if (!ano || !numeroMes) return ''
+
+    return new Date(ano, numeroMes - 1, 1)
+        .toLocaleDateString('pt-BR', { month: 'short' })
+        .replace('.', '')
 }
 
 function WeekAgendaCard({ agenda, hoje, proximosEnsaios, ensaiosHoje }) {
@@ -853,14 +1330,16 @@ function WeekAgendaCard({ agenda, hoje, proximosEnsaios, ensaiosHoje }) {
         <Card className="flex min-h-[220px] flex-col p-4 xl:h-[300px]">
             <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3.5">
-                    <CalendarDays size={21} className="shrink-0 text-[#C84F32]" />
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] border border-[#E8E8E8] bg-[#F5F5F5] text-[#1A1A1A]">
+                        <CalendarDays size={17} />
+                    </span>
                     <h2 className="truncate text-[13px] font-semibold uppercase tracking-[0.015em] text-[#1F1F21]">
                         Agenda da semana
                     </h2>
                 </div>
 
                 <Link
-                    to="/ensaios?view=calendar"
+                    to="/ensaios?view=calendar&grupo=todos"
                     className="inline-flex shrink-0 items-center gap-2 text-sm font-medium text-[#1F1F21] transition hover:text-[#C84F32]"
                 >
                     Ver agenda
@@ -870,7 +1349,9 @@ function WeekAgendaCard({ agenda, hoje, proximosEnsaios, ensaiosHoje }) {
 
             <div className="mt-3 grid grid-cols-7 gap-1.5">
                 {days.map((day, index) => {
-                    const ensaiosDia = index === 0 ? ensaiosHoje : getEnsaiosDoDia(agenda, day)
+                    const ensaiosDia = index === 0
+                        ? ensaiosHoje
+                        : getEnsaiosAgendadosHoje(getEnsaiosDoDia(agenda, day))
                     const active = index === 0
                     const summary = getAgendaDaySummary(ensaiosDia, day)
 
@@ -894,7 +1375,7 @@ function WeekAgendaCard({ agenda, hoje, proximosEnsaios, ensaiosHoje }) {
                             <span className="mt-0.5 text-[21px] font-normal leading-none text-[#080706]">
                                 {String(day.getDate()).padStart(2, '0')}
                             </span>
-                            <span className={`mt-1.5 h-1.5 w-1.5 rounded-full ${ensaiosDia.length ? 'bg-[#C84F32]' : 'bg-transparent'}`} />
+                            <span className={`mt-1.5 h-1.5 w-1.5 rounded-full ${ensaiosDia.length ? 'bg-[#22B14C]' : 'bg-transparent'}`} />
                         </button>
                     )
                 })}
@@ -950,6 +1431,9 @@ function WeekAgendaCard({ agenda, hoje, proximosEnsaios, ensaiosHoje }) {
                         <div className="min-w-0 px-4 py-3">
                             <h4 className="truncate text-[16px] font-medium text-[#1F1F21]">
                                 {getTipoLabel(ensaio)}
+                                {getFirstName(ensaio.clienteNome) ? (
+                                    <span className="font-normal text-[#6F6D6B]"> · {getFirstName(ensaio.clienteNome)}</span>
+                                ) : null}
                             </h4>
 
                             <div className="mt-2 flex min-w-0 items-center gap-2.5 overflow-hidden text-sm text-[#6F6D6B]">
@@ -958,10 +1442,6 @@ function WeekAgendaCard({ agenda, hoje, proximosEnsaios, ensaiosHoje }) {
                                 <span className="inline-flex shrink-0 items-center gap-1.5">
                                     <Clock3 size={15} className="text-[#C84F32]" />
                                     {data ? formatarHora(data) : '--:--'}
-                                </span>
-                                <span className="inline-flex min-w-0 shrink items-center gap-1.5">
-                                    <Users size={15} className="shrink-0 text-[#C84F32]" />
-                                    <span className="truncate">{getFirstName(ensaio.clienteNome) || 'Cliente'}</span>
                                 </span>
                                 <span className="inline-flex min-w-0 shrink items-center gap-1.5">
                                     <MapPin size={15} className="shrink-0 text-[#C84F32]" />
@@ -1007,42 +1487,42 @@ function AttentionSummaryCard({ dashboard, abrirTodasPendencias = false }) {
             value: countByType(['ENSAIO_ATRASADO']),
             types: ['ENSAIO_ATRASADO'],
             icon: AlertTriangle,
-            tone: 'bg-[#fff0e8] text-[#ff6b2a]',
-        },
-        {
-            label: 'Fotos ainda não enviadas',
-            value: countByType(['UPLOAD_PENDENTE']),
-            types: ['UPLOAD_PENDENTE'],
-            icon: PencilLine,
-            tone: 'bg-[#ececff] text-[#635bff]',
-        },
-        {
-            label: 'Álbuns aguardando publicação',
-            value: countByType(['ALBUM_PENDENTE']),
-            types: ['ALBUM_PENDENTE'],
-            icon: PackageCheck,
-            tone: 'bg-[#e8f8ef] text-[#19a66a]',
+            tone: 'border border-[#E8E3DF] bg-[#F5F4F2] text-[#1F1F21]',
         },
         {
             label: 'Seleções recebidas',
             value: countByType(['SELECAO_ENVIADA']),
             types: ['SELECAO_ENVIADA'],
             icon: CheckCircle2,
-            tone: 'bg-[#ececff] text-[#5757ff]',
+            tone: 'border border-[#E8E3DF] bg-[#F5F4F2] text-[#1F1F21]',
         },
         {
-            label: 'Edições atrasadas',
+            label: 'Edições demorando mais que o esperado',
             value: countByType(['ENTREGA_ATRASADA']),
             types: ['ENTREGA_ATRASADA'],
             icon: Clock3,
-            tone: 'bg-[#fff0f0] text-[#dc2626]',
+            tone: 'border border-[#E8E3DF] bg-[#F5F4F2] text-[#1F1F21]',
         },
         {
-            label: 'Pagamentos pendentes/não informados',
+            label: 'Pagamentos pendentes',
             value: countByType(['PAGAMENTO_PENDENTE']),
             types: ['PAGAMENTO_PENDENTE'],
             icon: DollarSign,
-            tone: 'bg-[#fff7e8] text-[#b7791f]',
+            tone: 'border border-[#E8E3DF] bg-[#F5F4F2] text-[#1F1F21]',
+        },
+        {
+            label: 'Fotos ainda não enviadas',
+            value: countByType(['UPLOAD_PENDENTE']),
+            types: ['UPLOAD_PENDENTE'],
+            icon: PencilLine,
+            tone: 'border border-[#E8E3DF] bg-[#F5F4F2] text-[#1F1F21]',
+        },
+        {
+            label: 'Álbuns aguardando publicação',
+            value: countByType(['ALBUM_PENDENTE']),
+            types: ['ALBUM_PENDENTE'],
+            icon: PackageCheck,
+            tone: 'border border-[#E8E3DF] bg-[#F5F4F2] text-[#1F1F21]',
         },
     ]
     const activeRows = rows.filter((row) => row.value > 0)
@@ -1077,7 +1557,7 @@ function AttentionSummaryCard({ dashboard, abrirTodasPendencias = false }) {
         <>
             <Card className="flex min-h-[220px] flex-col p-4 xl:h-[300px]">
                 <div className="flex items-start gap-3">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#E8E3DF] bg-[#F8EDE8] text-[#C84F32]">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#E8E8E8] bg-[#F5F5F5] text-[#1A1A1A]">
                         <Bell size={16} />
                     </span>
 
@@ -1114,11 +1594,11 @@ function AttentionSummaryCard({ dashboard, abrirTodasPendencias = false }) {
                         </span>
 
                         <strong className="mt-4 text-sm font-medium text-[#1F1F21]">
-                            Nenhuma pendência encontrada
+                            Tudo certo por aqui
                         </strong>
 
                         <span className="mt-1 text-sm text-[#6F6D6B]">
-                            Todos os ensaios estão em dia.
+                            Nenhuma ação precisa da sua atenção neste momento.
                         </span>
                     </div>
                 )}
@@ -1139,7 +1619,7 @@ function AttentionSummaryRow({ icon: Icon, label, value, tone, onOpen }) {
         <button
             type="button"
             onClick={onOpen}
-            className="flex h-[42px] w-full items-center gap-3 text-left transition hover:bg-[#fbf5ed]"
+            className="flex h-[42px] w-full items-center gap-3 text-left transition hover:bg-[#F8F7F5]"
         >
             <span className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] ${tone}`}>
                 <Icon size={15} strokeWidth={1.8} />
@@ -1153,7 +1633,7 @@ function AttentionSummaryRow({ icon: Icon, label, value, tone, onOpen }) {
                 {value}
             </strong>
 
-            <ArrowRight size={17} className="shrink-0 text-[#C84F32]" />
+            <ArrowRight size={17} className="shrink-0 text-[#8A8580]" />
         </button>
     )
 }
@@ -1210,7 +1690,7 @@ function AttentionDetailItem({ item }) {
     const data = getDate(item?.dataReferencia)
     const to = item?.ensaioId
         ? `/ensaios/${item.ensaioId}${item?.tipo === 'PAGAMENTO_PENDENTE' ? '?editar=valores' : ''}`
-        : '/ensaios?grupo=ativos'
+        : '/ensaios?grupo=andamento'
 
     return (
         <Link
@@ -1239,7 +1719,7 @@ function AttentionDetailItem({ item }) {
 function getAttentionTypeConfig(tipo) {
     const config = {
         ENSAIO_ATRASADO: {
-            label: 'Ensaio com data passada',
+            label: 'Ensaios com data passada',
             icon: AlertTriangle,
             tone: 'bg-[#fff0e8] text-[#ff6b2a]',
         },
@@ -1249,22 +1729,22 @@ function getAttentionTypeConfig(tipo) {
             tone: 'bg-[#ececff] text-[#635bff]',
         },
         ALBUM_PENDENTE: {
-            label: 'Álbum aguardando publicação',
+            label: 'Álbuns aguardando publicação',
             icon: PackageCheck,
             tone: 'bg-[#e8f8ef] text-[#19a66a]',
         },
         SELECAO_ENVIADA: {
-            label: 'Seleção recebida',
+            label: 'Seleções recebidas',
             icon: CheckCircle2,
             tone: 'bg-[#ececff] text-[#5757ff]',
         },
         ENTREGA_ATRASADA: {
-            label: 'Edição atrasada',
+            label: 'Edições demorando mais que o esperado',
             icon: Clock3,
             tone: 'bg-[#fff0f0] text-[#dc2626]',
         },
         PAGAMENTO_PENDENTE: {
-            label: 'Pagamento pendente',
+            label: 'Pagamentos pendentes',
             icon: DollarSign,
             tone: 'bg-[#fff7e8] text-[#b7791f]',
         },
@@ -1296,9 +1776,10 @@ function DashboardOverviewStrip({ dashboard }) {
             description: 'agendados e realizados',
             icon: CalendarDays,
             progress: percentEnsaiosMes,
-            footer: `${percentEnsaiosMes}% dos ensaios ativos`,
+            barColor: '#1F4E5F',
+            footer: `${percentEnsaiosMes}% dos ensaios cadastrados`,
             meta: `${totalEnsaios} no total`,
-            to: `/ensaios?${mesAtualParams}`,
+            to: `/ensaios?${mesAtualParams}&grupo=todos`,
         },
         {
             title: 'Em andamento',
@@ -1306,11 +1787,12 @@ function DashboardOverviewStrip({ dashboard }) {
             description: 'realizados, seleção e edição',
             icon: Zap,
             progress: andamentoTotal > 0 ? 100 : 0,
+            barColor: '#1F4E5F',
             footer: andamentoTotal > 0
                 ? `${andamentoTotal} em fluxo ativo`
                 : 'Nenhum ensaio ativo',
             meta: andamentoTotal > 0 ? 'Acompanhar' : '',
-            to: '/ensaios?grupo=ativos',
+            to: '/ensaios?grupo=andamento',
         },
         {
             title: 'Seleções recebidas',
@@ -1318,6 +1800,7 @@ function DashboardOverviewStrip({ dashboard }) {
             description: 'aguardando revisão',
             icon: CheckCircle2,
             progress: selecoes > 0 ? 100 : 0,
+            barColor: '#1F4E5F',
             footer: selecoes > 0
                 ? `${selecoes} aguardando revisão`
                 : 'Sem alterações',
@@ -1330,9 +1813,10 @@ function DashboardOverviewStrip({ dashboard }) {
             description: 'finalizados no mês',
             icon: PackageCheck,
             progress: entregas > 0 ? 100 : 0,
+            barColor: '#1F4E5F',
             footer: entregaLabel,
             meta: entregas > 0 ? 'Ver finalizados' : '',
-            to: '/ensaios?status=FINALIZADO',
+            to: `/ensaios?${mesAtualParams}&status=FINALIZADO`,
         },
     ]
 
@@ -1355,12 +1839,13 @@ function OverviewMetric({
     progress,
     footer,
     meta,
+    barColor = '#1F4E5F',
     to,
 }) {
     const content = (
         <div className="min-w-0">
             <div className="flex items-start gap-5">
-                <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-[#F5F3F1] text-[#C84F32]">
+                <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-[#E8E8E8] bg-[#F5F5F5] text-[#1A1A1A]">
                     <Icon size={26} strokeWidth={1.7} />
                 </span>
 
@@ -1379,8 +1864,11 @@ function OverviewMetric({
 
             <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-[#e5ddd4]">
                 <span
-                    className="block h-full rounded-full bg-[#b8731b]"
-                    style={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
+                    className="block h-full rounded-full"
+                    style={{
+                        width: `${Math.min(Math.max(progress, 0), 100)}%`,
+                        backgroundColor: barColor,
+                    }}
                 />
             </div>
 
@@ -1424,15 +1912,15 @@ function FlowPerformanceCard({ etapas }) {
     const hasData = items.some((item) => Number(item?.quantidadeAmostras || 0) > 0 && item?.mediaDias !== null)
 
     return (
-        <Card className="p-5 sm:p-6">
+        <Card className="p-4 sm:p-5">
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h2 className="text-[16px] font-semibold uppercase tracking-[0.015em] text-[#1F1F21]">
+                    <h2 className="text-[14px] font-semibold uppercase leading-4 tracking-[0.015em] text-[#1F1F21] sm:text-[15px]">
                         Desempenho do fluxo
                     </h2>
 
-                    <p className="mt-1 text-[13px] leading-5 text-[#6F6D6B]">
-                        Quanto tempo o estúdio leva em cada etapa
+                    <p className="mt-0.5 text-[11px] leading-4 text-[#6F6D6B] sm:text-[12px]">
+                        Quanto tempo seus ensaios ficam em cada etapa
                     </p>
                 </div>
 
@@ -1447,7 +1935,7 @@ function FlowPerformanceCard({ etapas }) {
 
             {hasData ? (
                 <div className="mt-4">
-                    <div className="grid items-center gap-3 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
+                    <div className="grid items-center gap-y-4 sm:grid-cols-[minmax(0,1fr)_14px_minmax(0,1fr)_14px_minmax(0,1fr)] sm:gap-x-1">
                         {items.map((item, index) => (
                             <FlowMetricFragment
                                 key={item?.chave || item?.titulo || index}
@@ -1458,7 +1946,7 @@ function FlowPerformanceCard({ etapas }) {
                         ))}
                     </div>
 
-                    <div className="mt-4 border-t border-[#EEEAE7] pt-3 text-xs text-[#8a8580]">
+                    <div className="mt-4 border-t border-[#EEEAE7] pt-2.5 text-[10px] text-[#8a8580] sm:text-[11px]">
                         Baseado no histórico recente
                     </div>
                 </div>
@@ -1477,28 +1965,29 @@ function FlowMetricFragment({ item, index, showArrow }) {
 
     return (
         <>
-            <div className="grid min-w-0 grid-cols-[36px_minmax(0,1fr)] items-center gap-2">
-                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${config.tone}`}>
-                    <Icon size={18} strokeWidth={1.9} />
+            <div className="min-w-0 text-center">
+                <span className={`mx-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${config.tone} sm:h-9 sm:w-9`}>
+                    <Icon size={17} strokeWidth={1.9} />
                 </span>
 
-                <div className="min-w-0">
-                    <p className="text-[11px] font-semibold leading-4 text-[#2b2520]">
-                        {item?.titulo || config.title}
-                    </p>
+                <p
+                    title={item?.titulo || config.title}
+                    className="mt-2 truncate text-[9px] font-semibold leading-3 text-[#2b2520] sm:text-[10px]"
+                >
+                    {item?.titulo || config.title}
+                </p>
 
-                    <p className="mt-1 whitespace-nowrap text-[20px] font-semibold leading-5 text-[#1F1F21]">
-                        {formatarDiasFluxo(item?.mediaDias)}
-                    </p>
+                <p className="mt-1 whitespace-nowrap text-[17px] font-semibold leading-5 text-[#1F1F21] sm:text-[19px]">
+                    {formatarDiasFluxo(item?.mediaDias)}
+                </p>
 
-                    <p className="mt-1 text-[10px] leading-4 text-[#8a8580]">
-                        {Number(item?.quantidadeAmostras || 0)} amostra{Number(item?.quantidadeAmostras || 0) === 1 ? '' : 's'}
-                    </p>
-                </div>
+                <p className="mt-0.5 whitespace-nowrap text-[9px] leading-3 text-[#8a8580] sm:text-[10px]">
+                    {Number(item?.quantidadeAmostras || 0)} amostra{Number(item?.quantidadeAmostras || 0) === 1 ? '' : 's'}
+                </p>
             </div>
 
             {showArrow ? (
-                <ArrowRight size={16} className="justify-self-center text-[#c9b9a7] max-lg:hidden" />
+                <ArrowRight size={14} className="hidden justify-self-center text-[#c9b9a7] sm:block" />
             ) : null}
         </>
     )
@@ -1515,7 +2004,7 @@ function DemandRegionCard({ regioes }) {
             <Card className="p-5 sm:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <MetricCardHeader
-                        icon={MapPin}
+                        icon={RegionClientIcon}
                         title="Clientes por região"
                         subtitle="De onde vêm seus clientes"
                         compact
@@ -1586,7 +2075,7 @@ function RegionRankingModal({ regioes, onClose }) {
             >
                 <div className="flex items-start justify-between gap-4 border-b border-[#EEEAE7] px-5 py-4">
                     <MetricCardHeader
-                        icon={MapPin}
+                        icon={RegionClientIcon}
                         title="Clientes por região"
                         subtitle="Ranking completo"
                         compact
@@ -1632,7 +2121,9 @@ function RevenueByTypeDashboardCard({
     erro = '',
     onPeriodoChange,
 }) {
-    const [visualizacao, setVisualizacao] = useState('lista')
+    const [visualizacao, setVisualizacao] = useState(() =>
+        getStoredPreference(REVENUE_VIEW_STORAGE_KEY, 'lista', ['lista', 'donut'])
+    )
     const [modalOpen, setModalOpen] = useState(false)
     const [activeDonutSlice, setActiveDonutSlice] = useState(null)
     const ranking = Array.isArray(tipos) ? tipos : []
@@ -1643,18 +2134,27 @@ function RevenueByTypeDashboardCard({
     const highlightedColor = activeDonutSlice?.color || '#C84F32'
     const periodoLabel = getRevenuePeriodLabel(periodo)
 
+    function alterarVisualizacao(nextVisualizacao) {
+        setVisualizacao(nextVisualizacao)
+        setStoredPreference(REVENUE_VIEW_STORAGE_KEY, nextVisualizacao)
+    }
+
     return (
         <>
             <Card className={`p-5 sm:p-6 ${ranking.length && visualizacao === 'donut' ? 'xl:min-h-[462px]' : ''}`}>
                 <div className="flex items-start justify-between gap-4">
                     <MetricCardHeader
-                        icon={DollarSign}
+                        icon={RevenueTypeIcon}
+                        iconSize={28}
                         title="Receita por tipo de ensaio"
                         subtitle="Onde o faturamento está concentrado"
                         compact
+                        className="min-w-0 flex-1"
+                        titleClassName="whitespace-nowrap text-[13px] sm:text-[14px] lg:text-[15px] xl:text-[16px]"
+                        subtitleClassName="whitespace-nowrap"
                     />
 
-                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    <div className="flex shrink-0 items-center justify-end gap-2">
                         <RevenuePeriodSelect
                             value={periodo}
                             onChange={onPeriodoChange}
@@ -1675,14 +2175,14 @@ function RevenueByTypeDashboardCard({
                             <div className="inline-flex rounded-full border border-[#E8E3DF] bg-transparent p-0.5">
                             <DashboardToggleButton
                                 active={visualizacao === 'lista'}
-                                onClick={() => setVisualizacao('lista')}
+                                onClick={() => alterarVisualizacao('lista')}
                             >
                                 Lista
                             </DashboardToggleButton>
 
                             <DashboardToggleButton
                                 active={visualizacao === 'donut'}
-                                onClick={() => setVisualizacao('donut')}
+                                onClick={() => alterarVisualizacao('donut')}
                             >
                                 Donut
                             </DashboardToggleButton>
@@ -1782,7 +2282,8 @@ function RevenueRankingModal({ tipos, onClose }) {
             >
                 <div className="flex items-start justify-between gap-4 border-b border-[#EEEAE7] px-5 py-4">
                     <MetricCardHeader
-                        icon={DollarSign}
+                        icon={RevenueTypeIcon}
+                        iconSize={28}
                         title="Receita por tipo de ensaio"
                         subtitle="Ranking completo"
                         compact
@@ -1823,13 +2324,13 @@ function RevenueRankingModal({ tipos, onClose }) {
 
 function RevenuePeriodSelect({ value, onChange, disabled = false }) {
     return (
-        <label className="flex h-9 shrink-0 items-center gap-2 rounded-full border border-[#E8E3DF] bg-white px-3 text-xs font-semibold text-[#5F5B57] shadow-[0_6px_16px_rgba(31,31,33,0.04)]">
-            <CalendarDays size={14} strokeWidth={1.8} className="text-[#C84F32]" />
+<label className="flex h-8 w-[135px] shrink-0 items-center gap-1.5 rounded-full border border-[#E8E3DF] bg-white px-2.5 text-[11px] font-semibold text-[#5F5B57] shadow-[0_6px_16px_rgba(31,31,33,0.04)]">           
+     <CalendarDays size={14} strokeWidth={1.8} className="shrink-0 text-[#C84F32]" />
             <select
                 value={value}
                 disabled={disabled}
                 onChange={(event) => onChange?.(event.target.value)}
-                className="max-w-[138px] cursor-pointer bg-transparent text-xs font-semibold text-[#5F5B57] outline-none disabled:cursor-wait disabled:opacity-70"
+                className="min-w-0 flex-1 cursor-pointer bg-transparent text-[11px] font-semibold text-[#5F5B57] outline-none disabled:cursor-wait disabled:opacity-70"
                 aria-label="Período da receita por tipo de ensaio"
             >
                 {REVENUE_PERIOD_OPTIONS.map((option) => (
@@ -1842,19 +2343,281 @@ function RevenuePeriodSelect({ value, onChange, disabled = false }) {
     )
 }
 
-function MetricCardHeader({ icon: Icon, title, subtitle, compact = false }) {
+function RevenueTypeIcon({ size = 24, strokeWidth = 1.8, className = '' }) {
     return (
-        <div className={`flex min-w-0 items-start ${compact ? 'gap-3' : 'gap-4'}`}>
-            <span className={`flex shrink-0 items-center justify-center rounded-[10px] bg-[#fff0e8] text-[#C84F32] ${compact ? 'h-11 w-11' : 'h-14 w-14'}`}>
-                <Icon size={compact ? 21 : 25} strokeWidth={1.8} />
+        <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+            aria-hidden="true"
+        >
+            <path d="M10.5 4.25a7.25 7.25 0 1 0 7.25 7.25H10.5Z" />
+            <path d="M13.25 3.5v7.25h7.25a7.25 7.25 0 0 0-7.25-7.25Z" />
+            <path d="M15.5 20v-2.5" />
+            <path d="M19 20v-5" />
+            <path d="M22 20v-8" />
+        </svg>
+    )
+}
+
+function getDashboardInsightSnapshotKey() {
+    const usuario = window.localStorage.getItem('usuarioId')
+        || window.localStorage.getItem('usuarioEmail')
+        || 'atual'
+
+    return `${DASHBOARD_INSIGHT_SNAPSHOT_STORAGE_KEY}:${usuario}`
+}
+
+function getDashboardInsightActiveKey() {
+    const usuario = window.localStorage.getItem('usuarioId')
+        || window.localStorage.getItem('usuarioEmail')
+        || 'atual'
+
+    return `${DASHBOARD_INSIGHT_ACTIVE_STORAGE_KEY}:${usuario}`
+}
+
+function readDashboardInsightSnapshot() {
+    try {
+        const value = window.localStorage.getItem(getDashboardInsightSnapshotKey())
+        return value ? JSON.parse(value) : null
+    } catch {
+        return null
+    }
+}
+
+function saveDashboardInsightSnapshot(snapshot) {
+    try {
+        window.localStorage.setItem(getDashboardInsightSnapshotKey(), JSON.stringify(snapshot))
+    } catch {
+        // O banner continua funcional mesmo quando o navegador não permite persistir a última leitura.
+    }
+}
+
+function readActiveDashboardInsightId() {
+    try {
+        return window.localStorage.getItem(getDashboardInsightActiveKey()) || ''
+    } catch {
+        return ''
+    }
+}
+
+function saveActiveDashboardInsightId(insightId) {
+    try {
+        window.localStorage.setItem(getDashboardInsightActiveKey(), insightId)
+    } catch {
+        // A rotação continua funcional na sessão mesmo sem localStorage.
+    }
+}
+
+function getDashboardMessagesCycleKey() {
+    const usuario = window.localStorage.getItem('usuarioId')
+        || window.localStorage.getItem('usuarioEmail')
+        || 'atual'
+
+    return `${DASHBOARD_MESSAGES_CYCLE_STORAGE_KEY}:${usuario}`
+}
+
+function normalizarMensagemDashboard(mensagem) {
+    return {
+        ...mensagem,
+        fingerprint: `${mensagem?.chave || ''}|${mensagem?.mensagem || ''}`,
+    }
+}
+
+function lerCicloMensagens() {
+    try {
+        const salvo = window.localStorage.getItem(getDashboardMessagesCycleKey())
+        const ciclo = salvo ? JSON.parse(salvo) : null
+
+        return {
+            exibidas: Array.isArray(ciclo?.exibidas) ? ciclo.exibidas : [],
+            sequencia: Array.isArray(ciclo?.sequencia) ? ciclo.sequencia : [],
+            posicao: Number.isInteger(ciclo?.posicao) ? ciclo.posicao : -1,
+            ativa: typeof ciclo?.ativa === 'string' ? ciclo.ativa : '',
+        }
+    } catch {
+        return { exibidas: [], sequencia: [], posicao: -1, ativa: '' }
+    }
+}
+
+function salvarCicloMensagens(ciclo) {
+    try {
+        if (!ciclo) {
+            window.localStorage.removeItem(getDashboardMessagesCycleKey())
+            return
+        }
+        window.localStorage.setItem(getDashboardMessagesCycleKey(), JSON.stringify({
+            exibidas: ciclo.exibidas,
+            sequencia: ciclo.sequencia,
+            posicao: ciclo.posicao,
+            ativa: ciclo.ativa?.fingerprint || '',
+        }))
+    } catch {
+        // O card segue navegável durante a sessão quando o storage não está disponível.
+    }
+}
+
+function limparCicloMensagens(ciclo, mensagens) {
+    const porFingerprint = new Map(mensagens.map((mensagem) => [mensagem.fingerprint, mensagem]))
+    const exibidas = ciclo.exibidas.filter((fingerprint) => porFingerprint.has(fingerprint))
+    const sequencia = ciclo.sequencia.filter((fingerprint) => porFingerprint.has(fingerprint))
+    const fingerprintAtivo = typeof ciclo.ativa === 'string'
+        ? ciclo.ativa
+        : ciclo.ativa?.fingerprint
+    const ativa = porFingerprint.get(fingerprintAtivo) || null
+    const posicaoDaAtiva = ativa ? sequencia.indexOf(ativa.fingerprint) : -1
+
+    return {
+        exibidas,
+        sequencia,
+        posicao: posicaoDaAtiva >= 0 ? posicaoDaAtiva : -1,
+        ativa,
+    }
+}
+
+function registrarMensagemExibida(ciclo, mensagem, mensagens, reiniciar = false) {
+    const posicao = mensagens.findIndex((item) => item.fingerprint === mensagem.fingerprint)
+    const exibidasAtuais = reiniciar ? [] : ciclo.exibidas
+    const exibidas = exibidasAtuais.includes(mensagem.fingerprint)
+        ? exibidasAtuais
+        : [...exibidasAtuais, mensagem.fingerprint]
+    const sequenciaAtual = reiniciar ? [] : ciclo.sequencia
+    const sequencia = sequenciaAtual.includes(mensagem.fingerprint)
+        ? sequenciaAtual
+        : [...sequenciaAtual, mensagem.fingerprint]
+
+    return { exibidas, sequencia, posicao: Math.max(0, posicao), ativa: mensagem }
+}
+
+function moverNoCicloMensagens(ciclo, mensagens, direcao) {
+    const cicloLimpo = limparCicloMensagens(ciclo, mensagens)
+    const indiceAtual = mensagens.findIndex((mensagem) => mensagem.fingerprint === cicloLimpo.ativa?.fingerprint)
+    const indiceBase = indiceAtual >= 0 ? indiceAtual : 0
+    const proximoIndice = (indiceBase + direcao + mensagens.length) % mensagens.length
+    const reiniciar = direcao > 0 && indiceAtual === mensagens.length - 1
+
+    return registrarMensagemExibida(cicloLimpo, mensagens[proximoIndice], mensagens, reiniciar)
+}
+
+function avancarNoCicloMensagens(ciclo, mensagens) {
+    const cicloLimpo = limparCicloMensagens(ciclo, mensagens)
+    const encerramento = mensagens.find((mensagem) => mensagem.fingerprint === 'FIM_CICLO_DASHBOARD')
+
+    if (cicloLimpo.ativa?.fingerprint === 'FIM_CICLO_DASHBOARD') {
+        return cicloLimpo
+    }
+
+    const indiceEncerramento = cicloLimpo.sequencia.indexOf('FIM_CICLO_DASHBOARD')
+    const indiceAtivaNaSequencia = cicloLimpo.sequencia.indexOf(cicloLimpo.ativa?.fingerprint)
+    const novidadeDepoisDoEncerramento = indiceEncerramento >= 0 && indiceAtivaNaSequencia > indiceEncerramento
+
+    if (novidadeDepoisDoEncerramento) {
+        const proximaNovidade = mensagens.find((mensagem) => (
+            mensagem.fingerprint !== 'FIM_CICLO_DASHBOARD' && !cicloLimpo.exibidas.includes(mensagem.fingerprint)
+        ))
+
+        return proximaNovidade
+            ? registrarMensagemExibida(cicloLimpo, proximaNovidade, mensagens)
+            : registrarMensagemExibida(cicloLimpo, encerramento, mensagens)
+    }
+
+    return moverNoCicloMensagens(cicloLimpo, mensagens, 1)
+}
+
+function voltarNoCicloMensagens(ciclo, mensagens) {
+    return moverNoCicloMensagens(ciclo, mensagens, -1)
+}
+
+function prepararCicloMensagens(mensagens) {
+    if (!mensagens.length) return null
+
+    const ciclo = limparCicloMensagens(lerCicloMensagens(), mensagens)
+    const atualizacaoInedita = mensagens.find((mensagem) => (
+        mensagem.tipo === 'ATUALIZACAO' && !ciclo.exibidas.includes(mensagem.fingerprint)
+    ))
+
+    return atualizacaoInedita
+        ? registrarMensagemExibida(ciclo, atualizacaoInedita, mensagens)
+        : ciclo.ativa
+            ? ciclo
+            : registrarMensagemExibida(ciclo, mensagens[0], mensagens)
+}
+
+function mensagemVaziaDashboard() {
+    return {
+        titulo: 'Tudo em dia por aqui',
+        mensagem: 'Novos insights aparecerão conforme você movimentar seus ensaios.',
+        fingerprint: 'FALLBACK_VAZIO',
+    }
+}
+
+function mensagemFimDoCicloDashboard() {
+    return {
+        chave: 'FIM_CICLO_DASHBOARD',
+        tipo: 'ENCERRAMENTO',
+        titulo: 'Por enquanto, é isso por aqui',
+        mensagem: 'Quando novas atualizações surgirem, elas aparecerão aqui.',
+        fingerprint: 'FIM_CICLO_DASHBOARD',
+    }
+}
+
+function mensagemErroDashboard() {
+    return {
+        titulo: 'Insights indisponíveis',
+        mensagem: 'Não foi possível atualizar as mensagens agora.',
+        fingerprint: 'FALLBACK_ERRO',
+    }
+}
+
+function RegionClientIcon({ size = 24, strokeWidth = 1.8, className = '' }) {
+    return (
+        <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+            aria-hidden="true"
+        >
+            <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+            <circle cx="12" cy="8.5" r="2.15" />
+            <path d="M8.8 15.2c.65-2.05 5.75-2.05 6.4 0" />
+        </svg>
+    )
+}
+
+function MetricCardHeader({
+    icon: Icon,
+    title,
+    subtitle,
+    compact = false,
+    iconSize,
+    className = '',
+    titleClassName = '',
+    subtitleClassName = '',
+}) {
+    return (
+        <div className={`flex min-w-0 items-start ${compact ? 'gap-3' : 'gap-4'} ${className}`}>
+            <span className={`flex shrink-0 items-center justify-center rounded-[10px] border border-[#E8E8E8] bg-[#F5F5F5] text-[#1A1A1A] ${compact ? 'h-11 w-11' : 'h-14 w-14'}`}>
+                <Icon size={iconSize || (compact ? 21 : 25)} strokeWidth={1.8} />
             </span>
 
             <div className="min-w-0">
-                <h2 className={`${compact ? 'text-[16px] leading-5' : 'text-[17px] leading-6'} font-semibold uppercase tracking-[0.015em] text-[#1F1F21]`}>
+                <h2 className={`${compact ? 'text-[16px] leading-5' : 'text-[17px] leading-6'} font-semibold uppercase tracking-[0.015em] text-[#1F1F21] ${titleClassName}`}>
                     {title}
                 </h2>
 
-                <p className={`${compact ? 'mt-0.5 text-[13px]' : 'mt-1 text-sm'} leading-5 text-[#6F6D6B]`}>
+                <p className={`${compact ? 'mt-0.5 text-[13px]' : 'mt-1 text-sm'} leading-5 text-[#6F6D6B] ${subtitleClassName}`}>
                     {subtitle}
                 </p>
             </div>
@@ -1872,7 +2635,7 @@ function DashboardToggleButton({ active, children, onClick }) {
         <button
             type="button"
             onClick={onClick}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                 active
                     ? 'bg-[#C84F32] text-white shadow-[0_6px_14px_rgba(200,79,50,0.14)]'
                     : 'text-[#6F6D6B] hover:bg-[#fff8f4] hover:text-[#C84F32]'
@@ -1984,7 +2747,7 @@ function DashboardDonutChart({ ranking, activeIndex = null, onActiveSliceChange 
                 return (
                     <path
                         key={slice.item?.tipoExibicao || slice.item?.tipo || slice.index}
-                        className="cursor-pointer opacity-85 transition duration-200 hover:opacity-100"
+                        className="cursor-pointer outline-none opacity-85 transition duration-200 hover:opacity-100"
                         d={path}
                         fill="transparent"
                         stroke={slice.color}

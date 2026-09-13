@@ -39,7 +39,7 @@ export function interpretarTextoLocalizacao(value) {
     if (uf) {
       estado = uf
       partes.pop()
-      cidade = partes.length >= 2 ? partes.pop() : ''
+      cidade = partes.length ? partes.pop() : ''
     }
   }
 
