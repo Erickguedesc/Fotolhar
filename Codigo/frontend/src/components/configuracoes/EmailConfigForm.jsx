@@ -225,21 +225,21 @@ export default function EmailConfigForm({
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <ToggleField
           label="Album publicado"
-          description="Envia link, senha e validade para a cliente."
+          description="Envia link, senha e validade para acesso ao álbum."
           checked={form.enviarAlbumPublicado}
           onChange={(value) => handleToggle('enviarAlbumPublicado', value)}
         />
 
         <ToggleField
           label="Selecao recebida"
-          description="Avisa voce quando a cliente enviar a selecao."
+          description="Avisa você quando uma seleção for enviada."
           checked={form.avisarSelecaoRecebida}
           onChange={(value) => handleToggle('avisarSelecaoRecebida', value)}
         />
 
         <ToggleField
-          label="Confirmacao para cliente"
-          description="Envia e-mail com PDF depois que a cliente finaliza a selecao."
+          label="Confirmação da seleção"
+          description="Envia e-mail com PDF após a finalização da seleção."
           checked={form.enviarConfirmacaoSelecaoCliente}
           onChange={(value) =>
             handleToggle('enviarConfirmacaoSelecaoCliente', value)
@@ -255,7 +255,7 @@ export default function EmailConfigForm({
       </div>
 
       <TextareaField
-        label="Mensagem para a cliente quando o album for publicado"
+        label="Mensagem ao publicar o álbum"
         name="mensagemAlbumPublicado"
         value={form.mensagemAlbumPublicado}
         onChange={handleChange}
@@ -300,9 +300,9 @@ export default function EmailConfigForm({
         title="Sobre o envio de e-mails"
         description="Use esta area para confirmar quais avisos o sistema pode enviar automaticamente durante o atendimento."
         items={[
-          'Publicar album envia link, senha e validade para a cliente.',
-          'Confirmação para cliente envia um e-mail com PDF do resumo da seleção.',
-          'Mudança de status também avisa a cliente quando um novo ensaio é cadastrado como agendado.',
+          'Publicar álbum envia link, senha e validade para acesso ao álbum.',
+          'Confirmação da seleção envia um e-mail com PDF do resumo.',
+          'Mudança de status também envia um aviso quando um novo ensaio é cadastrado como agendado.',
           'O e-mail de teste confirma se os envios estao chegando antes de voce usar com clientes.',
           'Seu e-mail para receber avisos também recebe respostas das clientes aos e-mails do sistema.',
         ]}

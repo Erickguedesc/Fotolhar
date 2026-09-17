@@ -52,7 +52,7 @@ public class SecurityConfig {
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
 
-                // Álbum público da cliente
+                // Álbum público
                 .requestMatchers(HttpMethod.GET, "/album/*").permitAll()
                 .requestMatchers(HttpMethod.POST, "/album/*/acessar").permitAll()
                 .requestMatchers(HttpMethod.POST, "/album/*/selecao").permitAll()

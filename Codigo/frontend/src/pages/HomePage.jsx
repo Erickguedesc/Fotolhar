@@ -101,8 +101,8 @@ const featureCards = [
 const flowSteps = [
   {
     icon: User,
-    title: '1. Cadastro do cliente',
-    text: 'Centralize dados, contatos, histórico e informações importantes de cada cliente.',
+    title: '1. Cadastro de contatos',
+    text: 'Centralize dados, contatos, histórico e informações importantes de cada atendimento.',
   },
   {
     icon: Calendar,
@@ -112,17 +112,17 @@ const flowSteps = [
   {
     icon: Camera,
     title: '3. Fotos do ensaio',
-    text: 'Organize as fotos vinculadas ao trabalho e mantenha tudo conectado ao cliente.',
+    text: 'Organize as fotos vinculadas ao trabalho e mantenha tudo conectado ao atendimento.',
   },
   {
     icon: Image,
     title: '4. Galeria privada',
-    text: 'Disponibilize uma galeria segura para o cliente acessar com senha.',
+    text: 'Disponibilize uma galeria segura com acesso por senha.',
   },
   {
     icon: Heart,
-    title: '5. Seleção do cliente',
-    text: 'O cliente marca favoritas, sinaliza escolhas e facilita o início da edição.',
+    title: '5. Seleção de fotos',
+    text: 'As pessoas convidadas marcam favoritas, sinalizam escolhas e facilitam o início da edição.',
   },
   {
     icon: SlidersHorizontal,
@@ -167,7 +167,7 @@ const systemBenefits = [
   },
   {
     title: 'Menos retrabalho',
-    text: 'O cliente seleciona, o sistema registra e você acompanha o andamento com mais clareza.',
+    text: 'A seleção é registrada e você acompanha o andamento com mais clareza.',
   },
   {
     title: 'Mais visão do negócio',
@@ -437,7 +437,7 @@ export default function HomePage() {
             <h2 className="mt-5 font-serif text-[40px] font-normal leading-[1.08] tracking-normal text-[#27323a]">
               Experiência incrível
               <br />
-              para você e seu cliente.
+              para seu estúdio e cada atendimento.
             </h2>
             <p className="mt-6 max-w-[315px] text-[14px] leading-[1.8] text-[#72808a]">
               Galerias online elegantes, seguras e pensadas para facilitar escolhas,
@@ -466,7 +466,7 @@ export default function HomePage() {
           <div className="relative">
             <img
               src={gallerySelection}
-              alt="Galeria do Fotolhar com seleção de fotos, comentários do cliente, fotos extras e progresso da seleção."
+              alt="Galeria do Fotolhar com seleção de fotos, comentários recebidos, fotos extras e progresso da seleção."
               className="w-full rounded-[8px] border border-[#eadfd7] bg-white object-contain shadow-[0_22px_55px_rgba(84,62,45,0.12)]"
             />
           </div>

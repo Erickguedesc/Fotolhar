@@ -6,6 +6,7 @@ import {
     Bell,
     CalendarDays,
     Camera,
+    ChartNoAxesCombined,
     CheckCircle2,
     ChevronLeft,
     ChevronRight,
@@ -13,6 +14,7 @@ import {
     DollarSign,
     Eye,
     EyeOff,
+    Heart,
     Image as ImageIcon,
     MapPin,
     PackageCheck,
@@ -679,8 +681,8 @@ function getDashboardNotice(dashboard, agenda, hoje, ensaiosHoje, rotationSlot =
             icon: ImageIcon,
             title: ensaiosEmSelecao > 1 ? 'Ensaios em seleção' : 'Ensaio em seleção',
             text: ensaiosEmSelecao > 1
-                ? `${ensaiosEmSelecao} ensaios estão aguardando escolha de fotos pela cliente.`
-                : 'Há um ensaio aguardando escolha de fotos pela cliente.',
+                ? `${ensaiosEmSelecao} ensaios estão aguardando escolha de fotos.`
+                : 'Há um ensaio aguardando escolha de fotos.',
             to: destinoStatus('EM_SELECAO', ensaiosEmSelecao),
         })
     }
@@ -802,7 +804,7 @@ function getDashboardNoveltyInsights(snapshot, previousSnapshot) {
             tone: 'success',
             title: novasSelecoes === 1 ? 'Seleção recebida' : 'Seleções recebidas',
             text: novasSelecoes === 1
-                ? 'Uma cliente enviou novas fotos para sua revisão.'
+                ? 'Há novas fotos enviadas para sua revisão.'
                 : `${novasSelecoes} clientes enviaram novas fotos para sua revisão.`,
         })
     }
@@ -904,7 +906,7 @@ function getDashboardInsights(dashboard, ensaiosHoje, novidades = []) {
             tone: 'neutral',
             title: selecoesEnviadas === 1 ? 'Seleção para revisar' : 'Seleções para revisar',
             text: selecoesEnviadas === 1
-                ? 'Uma cliente já enviou suas escolhas e aguarda sua revisão.'
+                ? 'Há escolhas aguardando sua revisão.'
                 : `${selecoesEnviadas} clientes já enviaram suas escolhas e aguardam sua revisão.`,
         })
     }
@@ -1056,42 +1058,39 @@ function DashboardTodayNotice({ mensagens, loading, erro }) {
         () => (Array.isArray(mensagens) ? mensagens.map(normalizarMensagemDashboard) : []),
         [mensagens]
     )
-    const mensagensElegiveis = useMemo(() => (
-        mensagensDoServidor.length
-            ? [...mensagensDoServidor, mensagemFimDoCicloDashboard()]
-            : []
-    ), [mensagensDoServidor])
-    const assinatura = mensagensElegiveis.map((mensagem) => mensagem.fingerprint).join('||')
+    const assinatura = mensagensDoServidor.map((mensagem) => mensagem.fingerprint).join('||')
     const [ciclo, setCiclo] = useState(null)
 
     useEffect(() => {
         if (loading || erro) return
 
-        const proximoCiclo = prepararCicloMensagens(mensagensElegiveis)
+        const proximoCiclo = prepararCicloMensagens(mensagensDoServidor)
         setCiclo(proximoCiclo)
         salvarCicloMensagens(proximoCiclo)
     }, [assinatura, loading])
 
     const mensagemAtiva = ciclo?.ativa
-        || mensagensElegiveis[0]
+        || mensagensDoServidor[0]
         || (erro ? mensagemErroDashboard() : mensagemVaziaDashboard())
     const visualMensagem = getVisualMensagemDashboard(mensagemAtiva?.tipo)
     const MessageIcon = visualMensagem?.icon || Sparkles
-    const temControles = !loading && mensagensElegiveis.length > 1
+    const temControles = !loading && mensagensDoServidor.length > 0
     const indicadoresVisiveis = useMemo(
-        () => getIndicadoresVisiveis(mensagensElegiveis, mensagemAtiva?.fingerprint),
-        [mensagensElegiveis, mensagemAtiva?.fingerprint]
+        () => getIndicadoresVisiveis(mensagensDoServidor, mensagemAtiva?.fingerprint),
+        [mensagensDoServidor, mensagemAtiva?.fingerprint]
     )
+    const temMensagemAnterior = temAnteriorNoCiclo(ciclo, mensagensDoServidor)
+    const temProximaMensagem = mensagemAtiva?.fingerprint !== 'FIM_CICLO_DASHBOARD'
 
     function navegar(direction) {
-        if (!mensagensElegiveis.length) return
+        if (!mensagensDoServidor.length) return
 
-        const cicloAtual = ciclo || prepararCicloMensagens(mensagensElegiveis)
+        const cicloAtual = ciclo || prepararCicloMensagens(mensagensDoServidor)
         if (!cicloAtual) return
 
         const proximoCiclo = direction < 0
-            ? voltarNoCicloMensagens(cicloAtual, mensagensElegiveis)
-            : avancarNoCicloMensagens(cicloAtual, mensagensElegiveis)
+            ? voltarNoCicloMensagens(cicloAtual, mensagensDoServidor)
+            : avancarNoCicloMensagens(cicloAtual, mensagensDoServidor)
 
         setCiclo(proximoCiclo)
         salvarCicloMensagens(proximoCiclo)
@@ -1122,13 +1121,13 @@ function DashboardTodayNotice({ mensagens, loading, erro }) {
 
             {temControles ? (
                 <div className="absolute right-5 top-1/2 flex -translate-y-1/2 items-center gap-1" aria-label="Controles dos insights">
-                    <button type="button" onClick={() => navegar(-1)} aria-label="Insight anterior" className="flex h-7 w-7 items-center justify-center rounded-full text-[#6F6D6B] transition hover:bg-[#F7F5F2] hover:text-[#1F1F21] focus:outline-none focus:ring-2 focus:ring-[#CFCAC4]"><ChevronLeft size={16} strokeWidth={1.8} /></button>
-                    <div className="flex items-center gap-1" aria-label={`Mensagem ${ciclo?.posicao + 1 || 1} de ${mensagensElegiveis.length}`}>
+                    <button type="button" onClick={() => navegar(-1)} disabled={!temMensagemAnterior} aria-label="Insight anterior" className="flex h-7 w-7 items-center justify-center rounded-full text-[#6F6D6B] transition hover:bg-[#F7F5F2] hover:text-[#1F1F21] focus:outline-none focus:ring-2 focus:ring-[#CFCAC4] disabled:cursor-default disabled:opacity-35"><ChevronLeft size={16} strokeWidth={1.8} /></button>
+                    <div className="flex items-center gap-1" aria-label={mensagemAtiva?.fingerprint === 'FIM_CICLO_DASHBOARD' ? 'Fim das mensagens disponíveis' : `Mensagem ${ciclo?.posicao + 1 || 1} de ${mensagensDoServidor.length}`}>
                         {indicadoresVisiveis.map((mensagem) => (
                             <span key={mensagem.fingerprint} aria-hidden="true" className={`h-1.5 rounded-full transition-all ${mensagem.fingerprint === mensagemAtiva.fingerprint ? 'w-3 bg-[#5F5B57]' : 'w-1.5 bg-[#D6D2CD]'}`} />
                         ))}
                     </div>
-                    <button type="button" onClick={() => navegar(1)} aria-label="Próximo insight" className="flex h-7 w-7 items-center justify-center rounded-full text-[#6F6D6B] transition hover:bg-[#F7F5F2] hover:text-[#1F1F21] focus:outline-none focus:ring-2 focus:ring-[#CFCAC4]"><ChevronRight size={16} strokeWidth={1.8} /></button>
+                    <button type="button" onClick={() => navegar(1)} disabled={!temProximaMensagem} aria-label="Próximo insight" className="flex h-7 w-7 items-center justify-center rounded-full text-[#6F6D6B] transition hover:bg-[#F7F5F2] hover:text-[#1F1F21] focus:outline-none focus:ring-2 focus:ring-[#CFCAC4] disabled:cursor-default disabled:opacity-35"><ChevronRight size={16} strokeWidth={1.8} /></button>
                 </div>
             ) : null}
         </section>
@@ -1486,43 +1485,31 @@ function AttentionSummaryCard({ dashboard, abrirTodasPendencias = false }) {
             label: 'Ensaios com data passada',
             value: countByType(['ENSAIO_ATRASADO']),
             types: ['ENSAIO_ATRASADO'],
-            icon: AlertTriangle,
-            tone: 'border border-[#E8E3DF] bg-[#F5F4F2] text-[#1F1F21]',
         },
         {
             label: 'Seleções recebidas',
             value: countByType(['SELECAO_ENVIADA']),
             types: ['SELECAO_ENVIADA'],
-            icon: CheckCircle2,
-            tone: 'border border-[#E8E3DF] bg-[#F5F4F2] text-[#1F1F21]',
         },
         {
             label: 'Edições demorando mais que o esperado',
             value: countByType(['ENTREGA_ATRASADA']),
             types: ['ENTREGA_ATRASADA'],
-            icon: Clock3,
-            tone: 'border border-[#E8E3DF] bg-[#F5F4F2] text-[#1F1F21]',
         },
         {
             label: 'Pagamentos pendentes',
             value: countByType(['PAGAMENTO_PENDENTE']),
             types: ['PAGAMENTO_PENDENTE'],
-            icon: DollarSign,
-            tone: 'border border-[#E8E3DF] bg-[#F5F4F2] text-[#1F1F21]',
         },
         {
             label: 'Fotos ainda não enviadas',
             value: countByType(['UPLOAD_PENDENTE']),
             types: ['UPLOAD_PENDENTE'],
-            icon: PencilLine,
-            tone: 'border border-[#E8E3DF] bg-[#F5F4F2] text-[#1F1F21]',
         },
         {
             label: 'Álbuns aguardando publicação',
             value: countByType(['ALBUM_PENDENTE']),
             types: ['ALBUM_PENDENTE'],
-            icon: PackageCheck,
-            tone: 'border border-[#E8E3DF] bg-[#F5F4F2] text-[#1F1F21]',
         },
     ]
     const activeRows = rows.filter((row) => row.value > 0)
@@ -1558,16 +1545,21 @@ function AttentionSummaryCard({ dashboard, abrirTodasPendencias = false }) {
             <Card className="flex min-h-[220px] flex-col p-4 xl:h-[300px]">
                 <div className="flex items-start gap-3">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#E8E8E8] bg-[#F5F5F5] text-[#1A1A1A]">
-                        <Bell size={16} />
+                        <AlertTriangle size={16} />
                     </span>
 
-                    <h2 className="pt-[2px] text-[13px] font-semibold uppercase tracking-[0.015em] text-[#1F1F21]">
-                        Atenção necessária
-                    </h2>
+                    <div>
+                        <h2 className="pt-[1px] text-[13px] font-semibold uppercase tracking-[0.015em] text-[#1F1F21]">
+                            Atenção necessária
+                        </h2>
+                        <p className="mt-1 text-[11px] leading-2 text-[#6F6D6B]">
+                            Tarefas que precisam de sua atenção.
+                        </p>
+                    </div>
                 </div>
 
                 {activeRows.length ? (
-                    <div className="mt-2 flex min-h-0 flex-1 flex-col">
+                    <div className="mt-3 flex min-h-0 flex-1 flex-col">
                         <div className="min-h-0 flex-1 divide-y divide-[#EEEAE7] overflow-y-auto overscroll-contain border-y border-[#EEEAE7] pr-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                             {activeRows.map((row) => (
                                 <AttentionSummaryRow
@@ -1614,17 +1606,13 @@ function AttentionSummaryCard({ dashboard, abrirTodasPendencias = false }) {
     )
 }
 
-function AttentionSummaryRow({ icon: Icon, label, value, tone, onOpen }) {
+function AttentionSummaryRow({ label, value, onOpen }) {
     return (
         <button
             type="button"
             onClick={onOpen}
             className="flex h-[42px] w-full items-center gap-3 text-left transition hover:bg-[#F8F7F5]"
         >
-            <span className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] ${tone}`}>
-                <Icon size={15} strokeWidth={1.8} />
-            </span>
-
             <span className="min-w-0 flex-1 truncate text-sm text-[#1F1F21]">
                 {label}
             </span>
@@ -2144,7 +2132,7 @@ function RevenueByTypeDashboardCard({
             <Card className={`p-5 sm:p-6 ${ranking.length && visualizacao === 'donut' ? 'xl:min-h-[462px]' : ''}`}>
                 <div className="flex items-start justify-between gap-4">
                     <MetricCardHeader
-                        icon={RevenueTypeIcon}
+                        icon={ChartNoAxesCombined}
                         iconSize={28}
                         title="Receita por tipo de ensaio"
                         subtitle="Onde o faturamento está concentrado"
@@ -2282,7 +2270,7 @@ function RevenueRankingModal({ tipos, onClose }) {
             >
                 <div className="flex items-start justify-between gap-4 border-b border-[#EEEAE7] px-5 py-4">
                     <MetricCardHeader
-                        icon={RevenueTypeIcon}
+                        icon={ChartNoAxesCombined}
                         iconSize={28}
                         title="Receita por tipo de ensaio"
                         subtitle="Ranking completo"
@@ -2340,29 +2328,6 @@ function RevenuePeriodSelect({ value, onChange, disabled = false }) {
                 ))}
             </select>
         </label>
-    )
-}
-
-function RevenueTypeIcon({ size = 24, strokeWidth = 1.8, className = '' }) {
-    return (
-        <svg
-            width={size}
-            height={size}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className}
-            aria-hidden="true"
-        >
-            <path d="M10.5 4.25a7.25 7.25 0 1 0 7.25 7.25H10.5Z" />
-            <path d="M13.25 3.5v7.25h7.25a7.25 7.25 0 0 0-7.25-7.25Z" />
-            <path d="M15.5 20v-2.5" />
-            <path d="M19 20v-5" />
-            <path d="M22 20v-8" />
-        </svg>
     )
 }
 
@@ -2434,15 +2399,18 @@ function lerCicloMensagens() {
     try {
         const salvo = window.localStorage.getItem(getDashboardMessagesCycleKey())
         const ciclo = salvo ? JSON.parse(salvo) : null
+        const historicoLegado = Array.isArray(ciclo?.historico)
+            ? ciclo.historico
+            : (Array.isArray(ciclo?.sequencia) ? ciclo.sequencia : [])
 
         return {
             exibidas: Array.isArray(ciclo?.exibidas) ? ciclo.exibidas : [],
-            sequencia: Array.isArray(ciclo?.sequencia) ? ciclo.sequencia : [],
+            historico: historicoLegado,
             posicao: Number.isInteger(ciclo?.posicao) ? ciclo.posicao : -1,
             ativa: typeof ciclo?.ativa === 'string' ? ciclo.ativa : '',
         }
     } catch {
-        return { exibidas: [], sequencia: [], posicao: -1, ativa: '' }
+        return { exibidas: [], historico: [], posicao: -1, ativa: '' }
     }
 }
 
@@ -2454,7 +2422,7 @@ function salvarCicloMensagens(ciclo) {
         }
         window.localStorage.setItem(getDashboardMessagesCycleKey(), JSON.stringify({
             exibidas: ciclo.exibidas,
-            sequencia: ciclo.sequencia,
+            historico: ciclo.historico,
             posicao: ciclo.posicao,
             ativa: ciclo.ativa?.fingerprint || '',
         }))
@@ -2466,72 +2434,107 @@ function salvarCicloMensagens(ciclo) {
 function limparCicloMensagens(ciclo, mensagens) {
     const porFingerprint = new Map(mensagens.map((mensagem) => [mensagem.fingerprint, mensagem]))
     const exibidas = ciclo.exibidas.filter((fingerprint) => porFingerprint.has(fingerprint))
-    const sequencia = ciclo.sequencia.filter((fingerprint) => porFingerprint.has(fingerprint))
+    const historico = (ciclo.historico || ciclo.sequencia || []).filter((fingerprint) => (
+        porFingerprint.has(fingerprint) || fingerprint === 'FIM_CICLO_DASHBOARD'
+    ))
     const fingerprintAtivo = typeof ciclo.ativa === 'string'
         ? ciclo.ativa
         : ciclo.ativa?.fingerprint
-    const ativa = porFingerprint.get(fingerprintAtivo) || null
-    const posicaoDaAtiva = ativa ? sequencia.indexOf(ativa.fingerprint) : -1
+    const ativa = fingerprintAtivo === 'FIM_CICLO_DASHBOARD'
+        ? mensagemFimDoCicloDashboard()
+        : (porFingerprint.get(fingerprintAtivo) || null)
+    const indiceHistorico = ativa ? historico.lastIndexOf(ativa.fingerprint) : -1
+    const posicaoDaAtiva = ativa && ativa.fingerprint !== 'FIM_CICLO_DASHBOARD'
+        ? mensagens.findIndex((mensagem) => mensagem.fingerprint === ativa.fingerprint)
+        : -1
 
     return {
         exibidas,
-        sequencia,
+        historico,
+        indiceHistorico,
         posicao: posicaoDaAtiva >= 0 ? posicaoDaAtiva : -1,
         ativa,
     }
 }
 
-function registrarMensagemExibida(ciclo, mensagem, mensagens, reiniciar = false) {
+function registrarMensagemExibida(ciclo, mensagem, mensagens) {
+    const cicloLimpo = limparCicloMensagens(ciclo, mensagens)
+    const historicoBase = cicloLimpo.indiceHistorico >= 0
+        ? cicloLimpo.historico.slice(0, cicloLimpo.indiceHistorico + 1)
+        : cicloLimpo.historico
+    const historico = historicoBase.at(-1) === mensagem.fingerprint
+        ? historicoBase
+        : [...historicoBase, mensagem.fingerprint]
+    const exibidas = mensagem.fingerprint === 'FIM_CICLO_DASHBOARD' || cicloLimpo.exibidas.includes(mensagem.fingerprint)
+        ? cicloLimpo.exibidas
+        : [...cicloLimpo.exibidas, mensagem.fingerprint]
     const posicao = mensagens.findIndex((item) => item.fingerprint === mensagem.fingerprint)
-    const exibidasAtuais = reiniciar ? [] : ciclo.exibidas
-    const exibidas = exibidasAtuais.includes(mensagem.fingerprint)
-        ? exibidasAtuais
-        : [...exibidasAtuais, mensagem.fingerprint]
-    const sequenciaAtual = reiniciar ? [] : ciclo.sequencia
-    const sequencia = sequenciaAtual.includes(mensagem.fingerprint)
-        ? sequenciaAtual
-        : [...sequenciaAtual, mensagem.fingerprint]
 
-    return { exibidas, sequencia, posicao: Math.max(0, posicao), ativa: mensagem }
+    return {
+        exibidas,
+        historico,
+        indiceHistorico: historico.length - 1,
+        posicao: Math.max(-1, posicao),
+        ativa: mensagem,
+    }
 }
 
-function moverNoCicloMensagens(ciclo, mensagens, direcao) {
+function ativarMensagemDoHistorico(ciclo, mensagens, indiceHistorico) {
     const cicloLimpo = limparCicloMensagens(ciclo, mensagens)
-    const indiceAtual = mensagens.findIndex((mensagem) => mensagem.fingerprint === cicloLimpo.ativa?.fingerprint)
-    const indiceBase = indiceAtual >= 0 ? indiceAtual : 0
-    const proximoIndice = (indiceBase + direcao + mensagens.length) % mensagens.length
-    const reiniciar = direcao > 0 && indiceAtual === mensagens.length - 1
+    const fingerprint = cicloLimpo.historico[indiceHistorico]
+    const ativa = fingerprint === 'FIM_CICLO_DASHBOARD'
+        ? mensagemFimDoCicloDashboard()
+        : mensagens.find((mensagem) => mensagem.fingerprint === fingerprint)
 
-    return registrarMensagemExibida(cicloLimpo, mensagens[proximoIndice], mensagens, reiniciar)
+    if (!ativa) return cicloLimpo
+
+    return {
+        ...cicloLimpo,
+        indiceHistorico,
+        posicao: mensagens.findIndex((mensagem) => mensagem.fingerprint === ativa.fingerprint),
+        ativa,
+    }
 }
 
 function avancarNoCicloMensagens(ciclo, mensagens) {
     const cicloLimpo = limparCicloMensagens(ciclo, mensagens)
-    const encerramento = mensagens.find((mensagem) => mensagem.fingerprint === 'FIM_CICLO_DASHBOARD')
 
     if (cicloLimpo.ativa?.fingerprint === 'FIM_CICLO_DASHBOARD') {
         return cicloLimpo
     }
 
-    const indiceEncerramento = cicloLimpo.sequencia.indexOf('FIM_CICLO_DASHBOARD')
-    const indiceAtivaNaSequencia = cicloLimpo.sequencia.indexOf(cicloLimpo.ativa?.fingerprint)
-    const novidadeDepoisDoEncerramento = indiceEncerramento >= 0 && indiceAtivaNaSequencia > indiceEncerramento
+    const proximoIndiceNoHistorico = cicloLimpo.historico.findIndex((fingerprint, indice) => (
+        indice > cicloLimpo.indiceHistorico && fingerprint !== 'FIM_CICLO_DASHBOARD'
+    ))
 
-    if (novidadeDepoisDoEncerramento) {
-        const proximaNovidade = mensagens.find((mensagem) => (
-            mensagem.fingerprint !== 'FIM_CICLO_DASHBOARD' && !cicloLimpo.exibidas.includes(mensagem.fingerprint)
-        ))
-
-        return proximaNovidade
-            ? registrarMensagemExibida(cicloLimpo, proximaNovidade, mensagens)
-            : registrarMensagemExibida(cicloLimpo, encerramento, mensagens)
+    if (proximoIndiceNoHistorico >= 0) {
+        return ativarMensagemDoHistorico(cicloLimpo, mensagens, proximoIndiceNoHistorico)
     }
 
-    return moverNoCicloMensagens(cicloLimpo, mensagens, 1)
+    const proximaMensagemInedita = mensagens.find((mensagem) => !cicloLimpo.exibidas.includes(mensagem.fingerprint))
+    return proximaMensagemInedita
+        ? registrarMensagemExibida(cicloLimpo, proximaMensagemInedita, mensagens)
+        : registrarMensagemExibida(cicloLimpo, mensagemFimDoCicloDashboard(), mensagens)
 }
 
 function voltarNoCicloMensagens(ciclo, mensagens) {
-    return moverNoCicloMensagens(ciclo, mensagens, -1)
+    const cicloLimpo = limparCicloMensagens(ciclo, mensagens)
+    const indiceAnterior = cicloLimpo.historico.findLastIndex((fingerprint, indice) => (
+        indice < cicloLimpo.indiceHistorico && fingerprint !== 'FIM_CICLO_DASHBOARD'
+    ))
+
+    return indiceAnterior >= 0
+        ? ativarMensagemDoHistorico(cicloLimpo, mensagens, indiceAnterior)
+        : cicloLimpo
+}
+
+function temAnteriorNoCiclo(ciclo, mensagens) {
+    if (!ciclo?.ativa) return false
+
+    const cicloLimpo = limparCicloMensagens(ciclo, mensagens)
+    return cicloLimpo.historico.some((fingerprint, indice) => (
+        indice < cicloLimpo.indiceHistorico && fingerprint !== 'FIM_CICLO_DASHBOARD'
+    ))
 }
 
 function prepararCicloMensagens(mensagens) {
@@ -2853,7 +2856,7 @@ function getFlowMetricConfig(chave, index = 0) {
             tone: 'bg-[#eaf8e9] text-[#62A83E]',
         },
         ALBUM_SELECAO: {
-            icon: PencilLine,
+            icon: Heart,
             title: 'Álbum → seleção',
             tone: 'bg-[#f0edff] text-[#7167E8]',
         },

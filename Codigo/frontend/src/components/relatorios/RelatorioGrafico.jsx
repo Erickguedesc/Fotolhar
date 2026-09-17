@@ -33,7 +33,9 @@ export default function RelatorioGrafico({ periodos = [], loading }) {
           </h2>
 
           <p className="mt-1 text-sm text-[#6F6D6B]">
-            Compare receita, volume e concentração dos períodos filtrados.
+            {modo === 'linha'
+              ? 'Compare os valores previstos e recebidos ao longo dos períodos filtrados.'
+              : 'Compare receita, volume e concentração dos períodos filtrados.'}
           </p>
         </div>
 
@@ -378,61 +380,105 @@ function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
 function LinhaChart({ periodos }) {
   const [tooltip, setTooltip] = useState(null)
 
-  const maiorTotal = Math.max(
+  const maiorValor = Math.max(
     1,
-    ...periodos.map((item) => Number(item.totalLiquido || 0)),
+    ...periodos.flatMap((item) => [
+      Number(item.totalLiquido || 0),
+      Number(item.valorRecebido || 0),
+    ]),
   )
   const largura = 700
-  const altura = 230
-  const paddingX = 44
-  const paddingY = 34
-  const larguraUtil = largura - paddingX * 2
-  const alturaUtil = altura - paddingY * 2
+  const altura = 250
+  const paddingEsquerda = 32
+  const paddingDireita = 24
+  const paddingTopo = 24
+  const paddingBase = 34
+  const larguraUtil = largura - paddingEsquerda - paddingDireita
+  const alturaUtil = altura - paddingTopo - paddingBase
   const divisor = Math.max(1, periodos.length - 1)
+  const marcas = [0, 0.25, 0.5, 0.75, 1]
+
+  const calcularY = (valor) => (
+    paddingTopo + alturaUtil - (Math.max(0, Number(valor || 0)) / maiorValor) * alturaUtil
+  )
 
   const pontos = periodos.map((item, index) => {
-    const x = paddingX + (index / divisor) * larguraUtil
-    const y = paddingY + alturaUtil - (Number(item.totalLiquido || 0) / maiorTotal) * alturaUtil
-    return { x, y, item }
+    const x = paddingEsquerda + (index / divisor) * larguraUtil
+    const previsto = Number(item.totalLiquido || 0)
+    const recebido = Number(item.valorRecebido || 0)
+
+    return {
+      item,
+      previsto,
+      recebido,
+      x,
+      yPrevisto: calcularY(previsto),
+      yRecebido: calcularY(recebido),
+    }
   })
 
-  const path = pontos
-    .map((ponto, index) => `${index === 0 ? 'M' : 'L'} ${ponto.x} ${ponto.y}`)
+  const criarPath = (chaveY) => pontos
+    .map((ponto, index) => `${index === 0 ? 'M' : 'L'} ${ponto.x} ${ponto[chaveY]}`)
     .join(' ')
+  const pathPrevisto = criarPath('yPrevisto')
+  const pathRecebido = criarPath('yRecebido')
+  const larguraAreaInteracao = Math.max(36, larguraUtil / Math.max(1, periodos.length))
+
+  function exibirTooltip(ponto) {
+    const yReferencia = Math.min(ponto.yPrevisto, ponto.yRecebido)
+
+    setTooltip({
+      label: ponto.item.label,
+      previsto: ponto.previsto,
+      recebido: ponto.recebido,
+      placement: yReferencia < paddingTopo + 50 ? 'below' : 'above',
+      x: `${(ponto.x / largura) * 100}%`,
+      y: `${(yReferencia / altura) * 100}%`,
+    })
+  }
 
   return (
-    <div className="theme-scrollbar overflow-x-auto">
+    <>
+      <div className="mb-5 flex flex-wrap gap-5 text-xs font-medium text-[#6D6258]">
+        <span className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#C84F32]" />
+          Valor previsto
+        </span>
+
+        <span className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#15803D]" />
+          Valor recebido
+        </span>
+      </div>
+
+      <div className="theme-scrollbar overflow-x-auto">
       <div className="relative min-w-[720px]">
         <svg
           viewBox={`0 0 ${largura} ${altura}`}
           className="min-h-[270px] min-w-[720px]"
           role="img"
-          aria-label="Linha de receita por período"
+          aria-label="Linhas de valores previstos e recebidos por período"
         >
-          {[0.25, 0.5, 0.75, 1].map((marca) => (
-            <line
-              key={marca}
-              x1={paddingX}
-              y1={paddingY + alturaUtil - marca * alturaUtil}
-              x2={largura - paddingX}
-              y2={paddingY + alturaUtil - marca * alturaUtil}
-              stroke="#e9e1d7"
-              strokeDasharray="5 5"
-              strokeWidth="1"
-            />
-          ))}
+          {marcas.map((marca) => {
+            const y = paddingTopo + alturaUtil - marca * alturaUtil
 
-          <line
-            x1={paddingX}
-            y1={altura - paddingY}
-            x2={largura - paddingX}
-            y2={altura - paddingY}
-            stroke="#E8E3DF"
-            strokeWidth="1"
-          />
+            return (
+              <g key={marca}>
+                <line
+                  x1={paddingEsquerda}
+                  y1={y}
+                  x2={largura - paddingDireita}
+                  y2={y}
+                  stroke={marca === 0 ? '#E8E3DF' : '#E9E1D7'}
+                  strokeDasharray={marca === 0 ? undefined : '5 5'}
+                  strokeWidth="1"
+                />
+              </g>
+            )
+          })}
 
           <path
-            d={path}
+            d={pathPrevisto}
             fill="none"
             stroke="#C84F32"
             strokeWidth="3"
@@ -440,45 +486,46 @@ function LinhaChart({ periodos }) {
             strokeLinejoin="round"
           />
 
+          <path
+            d={pathRecebido}
+            fill="none"
+            stroke="#15803D"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
           {pontos.map((ponto) => (
-            <g key={`${ponto.item.label}-${ponto.item.inicio}`} className="group">
+            <g key={`${ponto.item.label}-${ponto.item.inicio}`}>
               <circle
                 cx={ponto.x}
-                cy={ponto.y}
-                r="7"
-                fill="transparent"
-                className="cursor-pointer"
-                tabIndex={0}
-                onMouseEnter={() =>
-                  setTooltip({
-                    description: `${ponto.item.quantidadeEnsaios || 0} ensaio(s)`,
-                    label: ponto.item.label,
-                    placement: ponto.y < 80 ? 'below' : 'above',
-                    value: formatMoney(ponto.item.totalLiquido),
-                    x: `${(ponto.x / largura) * 100}%`,
-                    y: `${(ponto.y / altura) * 100}%`,
-                  })
-                }
-                onMouseLeave={() => setTooltip(null)}
-                onFocus={() =>
-                  setTooltip({
-                    description: `${ponto.item.quantidadeEnsaios || 0} ensaio(s)`,
-                    label: ponto.item.label,
-                    placement: ponto.y < 80 ? 'below' : 'above',
-                    value: formatMoney(ponto.item.totalLiquido),
-                    x: `${(ponto.x / largura) * 100}%`,
-                    y: `${(ponto.y / altura) * 100}%`,
-                  })
-                }
-                onBlur={() => setTooltip(null)}
+                cy={ponto.yPrevisto}
+                r="4.5"
+                fill="#C84F32"
+                className="pointer-events-none"
               />
 
               <circle
                 cx={ponto.x}
-                cy={ponto.y}
-                r="5"
-                fill="#C84F32"
-                className="pointer-events-none transition group-hover:r-[7px]"
+                cy={ponto.yRecebido}
+                r="4.5"
+                fill="#15803D"
+                className="pointer-events-none"
+              />
+
+              <rect
+                x={ponto.x - larguraAreaInteracao / 2}
+                y={paddingTopo}
+                width={larguraAreaInteracao}
+                height={alturaUtil}
+                fill="transparent"
+                className="cursor-pointer focus:outline-none"
+                tabIndex={0}
+                aria-label={`${ponto.item.label}: valor previsto ${formatMoney(ponto.previsto)}; valor recebido ${formatMoney(ponto.recebido)}`}
+                onMouseEnter={() => exibirTooltip(ponto)}
+                onMouseLeave={() => setTooltip(null)}
+                onFocus={() => exibirTooltip(ponto)}
+                onBlur={() => setTooltip(null)}
               />
 
               <text
@@ -506,17 +553,18 @@ function LinhaChart({ periodos }) {
               {tooltip.label}
             </span>
 
-            <span className="mt-0.5 block font-semibold text-[#AE3F28]">
-              {tooltip.value}
+            <span className="mt-1 block font-semibold text-[#AE3F28]">
+              Valor previsto: {formatMoney(tooltip.previsto)}
             </span>
 
-            <span className="block text-[11px] text-[#6F6D6B]">
-              {tooltip.description}
+            <span className="mt-0.5 block font-semibold text-[#15803D]">
+              Valor recebido: {formatMoney(tooltip.recebido)}
             </span>
           </div>
         ) : null}
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 

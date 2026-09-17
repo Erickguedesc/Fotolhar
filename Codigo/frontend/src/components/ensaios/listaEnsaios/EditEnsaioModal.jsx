@@ -163,10 +163,10 @@ export default function EditEnsaioModal({
         <form id="edit-ensaio-form" onSubmit={submit} className="space-y-5">
           {showClienteFields && (
             <div className="space-y-4">
-              <p className={sectionTitleClass}>Dados do cliente</p>
+              <p className={sectionTitleClass}>Dados de contato</p>
 
               <label className="block">
-                <span className={labelClass}>Nome do cliente</span>
+                <span className={labelClass}>Nome completo</span>
                 <input
                   required
                   value={form.clienteNome}
@@ -273,7 +273,7 @@ export default function EditEnsaioModal({
                   value={form.local}
                   onChange={(event) => change('local', event.target.value)}
                   className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-[13px] outline-none"
-                  placeholder="Ex: Estúdio, chácara da cliente, Jardim Botânico"
+                  placeholder="Ex.: Estúdio, residência, Jardim Botânico"
                 />
               </div>
             </label>

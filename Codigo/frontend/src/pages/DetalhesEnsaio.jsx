@@ -218,7 +218,7 @@
     const tabs = [
       { id: 'informacoes', label: 'Informações', icon: Info, description: 'Resumo do ensaio' },
       { id: 'album', label: 'Criar álbum', icon: Images, badge: pluralizarFotos(fotos.length) },
-      { id: 'selecao', label: 'Seleção do cliente', icon: Heart, badge: badgeSelecao },
+      { id: 'selecao', label: 'Seleção de fotos', icon: Heart, badge: badgeSelecao },
     ]
 
     useEffect(() => {
@@ -427,7 +427,7 @@
 
     const handleOpenClienteEdit = () => {
       if (!getClienteId(ensaio)) {
-        showToast('Não foi possível identificar o cliente deste ensaio.', 'error')
+        showToast('Não foi possível identificar o contato deste ensaio.', 'error')
         return
       }
 
@@ -438,7 +438,7 @@
       const clienteId = getClienteId(ensaio)
 
       if (!clienteId) {
-        showToast('Não foi possível identificar o cliente deste ensaio.', 'error')
+        showToast('Não foi possível identificar o contato deste ensaio.', 'error')
         return
       }
 
@@ -462,11 +462,11 @@
           clienteIndicacao: clienteAtualizado.indicacao ?? payload.indicacao,
         }) : current)
 
-        showToast('Cliente atualizado com sucesso.')
+        showToast('Contato atualizado com sucesso.')
         setClienteModalOpen(false)
         await loadEnsaio()
       } catch (error) {
-        showToast(getApiErrorMessage(error, 'Não foi possível salvar os dados do cliente.'), 'error')
+        showToast(getApiErrorMessage(error, 'Não foi possível salvar os dados.'), 'error')
       } finally {
         setClienteEditLoading(false)
       }
@@ -836,7 +836,7 @@
       showToast(
         successMessage ||
         (album?.urlAcesso
-          ? 'Nova senha gerada com sucesso. Envie a senha atualizada para a cliente.'
+          ? 'Nova senha gerada com sucesso. Envie a senha atualizada junto com o link do álbum.'
           : 'Álbum publicado com sucesso. As fotos foram bloqueadas para preservar a galeria enviada.'
         )
       )
@@ -859,12 +859,12 @@
         type: 'warning',
         title: 'Gerar nova senha?',
         description:
-          'Gerar uma nova senha vai invalidar a senha anterior. A cliente só conseguirá acessar o álbum se receber a nova senha.',
+          'Gerar uma nova senha vai invalidar a senha anterior. O álbum poderá ser acessado somente com a nova senha.',
         confirmText: 'Gerar nova senha',
         onConfirm: async () => {
           setConfirmAction(null)
           await publicarAlbum({
-            successMessage: 'Nova senha gerada com sucesso. Envie a senha atualizada para a cliente.',
+            successMessage: 'Nova senha gerada com sucesso. Envie a senha atualizada junto com o link do álbum.',
             errorMessage: 'Nao foi possivel gerar uma nova senha para o album.',
           })
         },
@@ -885,12 +885,12 @@
         type: 'gold',
         title: 'Publicar novamente?',
         description:
-          'O álbum será liberado novamente para a cliente e uma nova senha de acesso será gerada.',
+          'O álbum será liberado novamente e uma nova senha de acesso será gerada.',
         confirmText: 'Publicar novamente',
         onConfirm: async () => {
           setConfirmAction(null)
           await publicarAlbum({
-            successMessage: 'Album publicado novamente. Envie o link e a nova senha para a cliente.',
+            successMessage: 'Álbum publicado novamente. Envie o link e a nova senha de acesso.',
             errorMessage: 'Nao foi possivel publicar novamente o album.',
           })
         },
@@ -910,7 +910,7 @@
       type: 'warning',
       title: 'Reabrir álbum?',
       description:
-        'O acesso da cliente será pausado temporariamente e você poderá editar as fotos do álbum. Depois será necessário publicar novamente e enviar uma nova senha.',
+        'O acesso ao álbum será pausado temporariamente e você poderá editar as fotos. Depois será necessário publicar novamente e enviar uma nova senha.',
       confirmText: 'Reabrir álbum',
       onConfirm: async () => {
         setPublicando(true)
@@ -921,7 +921,7 @@
           setSelecao(null)
           setConfirmAction(null)
 
-          showToast('Álbum reaberto para edição. O acesso da cliente foi pausado.')
+          showToast('Álbum reaberto para edição. O acesso ao álbum foi pausado.')
         } catch (error) {
           const msg =
             error?.response?.data?.message ||
@@ -955,7 +955,7 @@
       } catch (error) {
         const msg =
           error?.response?.data?.message ||
-          'Ainda não existe seleção enviada pela cliente.'
+          'Ainda não existe seleção enviada.'
 
         showToast(msg, 'error')
       } finally {
@@ -1007,7 +1007,7 @@
     }
 
     if (album?.urlAcesso && !albumPublicado) {
-      showToast('O álbum está pausado. Publique novamente antes de enviar para a cliente.', 'error')
+      showToast('O álbum está pausado. Publique novamente antes de compartilhar o acesso.', 'error')
       return
     }
 
@@ -1405,7 +1405,7 @@ const texto =
     return (
       <section className="rounded-[14px] border border-[var(--border)] bg-white/78 shadow-[0_14px_34px_rgba(31,31,33,0.055)]">
         <SectionTitle
-          title="Dados do cliente"
+          title="Dados de contato"
           icon={UserRound}
           actionLabel="Editar"
           onAction={onEdit}
@@ -1455,7 +1455,7 @@ const texto =
     return (
       <BaseModal
         open={open}
-        title="Editar cliente"
+        title="Editar contato"
         onClose={onClose}
         footer={(
           <>
@@ -1482,7 +1482,7 @@ const texto =
         <form id="edit-cliente-form" onSubmit={submit} className="space-y-4">
           <label className="block">
             <span className="theme-muted mb-1.5 block text-[10.5px] uppercase tracking-[0.13em]">
-              Nome do cliente
+              Nome completo
             </span>
             <input
               required
@@ -1610,7 +1610,7 @@ const texto =
 
             {excedente > 0 ? (
               <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-[12px] leading-5 text-red-700">
-                Cliente selecionou além do pacote. Confirme o valor antes da entrega.
+                A seleção ultrapassou o pacote. Confirme o valor antes da entrega.
               </div>
             ) : null}
 

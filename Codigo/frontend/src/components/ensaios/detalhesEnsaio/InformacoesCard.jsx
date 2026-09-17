@@ -88,7 +88,7 @@ export default function InformacoesCard({ ensaio, selecao, onEdit }) {
             <InfoItem label="Data" value={formatDate(ensaio.dataEnsaio)} compact />
             <InfoItem label="Horário" value={formatTime(ensaio.dataEnsaio)} compact />
 
-            <InfoItem label="Cliente" value={getSafeValue(ensaio.clienteNome)} compact />
+            <InfoItem label="Contato" value={getSafeValue(ensaio.clienteNome)} compact />
 
             <InfoItem
               label="Fotos incluídas"

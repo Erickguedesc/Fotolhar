@@ -180,8 +180,8 @@ export default function PreferenciasSistemaForm({
   description="Use esta área para definir valores padrão usados automaticamente em outras telas."
   items={[
     'A quantidade de fotos e o valor por foto extra são usados como sugestão ao criar novos ensaios.',
-    'A expiração do álbum define por quantos dias o link do cliente ficará válido.',
-    'As mensagens padrão são usadas no envio do álbum e em fluxos de comunicação com a cliente.',
+    'A expiração do álbum define por quantos dias o link de acesso ficará válido.',
+    'As mensagens padrão são usadas no envio do álbum e nos fluxos de comunicação.',
     'Esses valores são apenas padrões: ainda podem ser alterados manualmente em cada ensaio.',
   ]}
 />

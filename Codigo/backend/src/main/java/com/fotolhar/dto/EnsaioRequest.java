@@ -23,16 +23,16 @@ public class EnsaioRequest {
     @NotNull(message = "Cliente e obrigatorio")
     private UUID clienteId;
 
-    @Size(max = 200, message = "Nome da cliente deve ter no maximo 200 caracteres")
+    @Size(max = 200, message = "Nome deve ter no máximo 200 caracteres")
     private String clienteNome;
 
-    @Size(max = 200, message = "E-mail da cliente deve ter no maximo 200 caracteres")
+    @Size(max = 200, message = "E-mail deve ter no máximo 200 caracteres")
     private String clienteEmail;
 
-    @Size(max = 30, message = "Telefone da cliente deve ter no maximo 30 caracteres")
+    @Size(max = 30, message = "Telefone deve ter no máximo 30 caracteres")
     private String clienteTelefone;
 
-    @Size(max = 20, message = "CPF da cliente deve ter no maximo 20 caracteres")
+    @Size(max = 20, message = "CPF deve ter no máximo 20 caracteres")
     private String clienteCpf;
 
     @Size(max = 120, message = "Cidade deve ter no maximo 120 caracteres")

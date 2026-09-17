@@ -124,7 +124,7 @@ private void adicionarCabecalho(Document document, ConfiguracaoEstudio estudio) 
     subtitulo.setSpacingAfter(22);
     document.add(subtitulo);
 
-    Paragraph titulo = new Paragraph("Relatório do Ensaio e Seleção da Cliente", titleFont);
+    Paragraph titulo = new Paragraph("Relatório do Ensaio e Seleção de Fotos", titleFont);
     titulo.setSpacingAfter(14);
     document.add(titulo);
 }
@@ -173,12 +173,12 @@ private void adicionarCabecalho(Document document, ConfiguracaoEstudio estudio) 
     }
 
     private void adicionarSelecaoCliente(Document document, Ensaio ensaio) throws Exception {
-        adicionarTituloSecao(document, "Seleção da cliente");
+        adicionarTituloSecao(document, "Seleção de fotos");
 
         List<SelecaoFoto> selecoes = buscarSelecoesDoEnsaio(ensaio);
 
         if (selecoes.isEmpty()) {
-            adicionarAviso(document, "Seleção ainda não enviada pela cliente.");
+            adicionarAviso(document, "Seleção ainda não enviada.");
             return;
         }
 

@@ -71,7 +71,7 @@ public class EmailService {
 
         String corpo = String.join("\n\n",
                 mensagem,
-                "Cliente: " + ensaio.getCliente().getNome(),
+                "Contato: " + ensaio.getCliente().getNome(),
                 "Link do álbum: " + urlAcesso,
                 "Senha: " + senha,
                 "Disponivel até: " + validade,
@@ -97,12 +97,12 @@ public class EmailService {
 
         String mensagem = valorOuPadrao(
                 config.getMensagemSelecaoRecebida(),
-                "A cliente enviou a selecao de fotos. Acesse o sistema para conferir os detalhes."
+                "A seleção de fotos foi enviada. Acesse o sistema para conferir os detalhes."
         );
 
         String corpo = String.join("\n\n",
                 mensagem,
-                "Cliente: " + ensaio.getCliente().getNome(),
+                "Contato: " + ensaio.getCliente().getNome(),
                 "Tipo do ensaio: " + resolverTipoExibicao(ensaio),
                 "Fotos selecionadas: " + totalSelecionadas,
                 "Fotos extras: " + excedente
@@ -142,7 +142,7 @@ public class EmailService {
                     valorExcedente
             );
 
-            String nomeCliente = valorOuPadrao(ensaio.getCliente().getNome(), "cliente");
+            String nomeCliente = valorOuPadrao(ensaio.getCliente().getNome(), "pessoa convidada");
             String nomeRemetente = valorOuPadrao(config.getNomeRemetente(), "Seu Estudio Fotografico");
             String corpo = String.join("\n\n",
                     "Olá, " + nomeCliente + ". Tudo bem?",
@@ -160,7 +160,7 @@ public class EmailService {
                     pdf
             );
         } catch (Exception error) {
-            log.warn("[EmailService] Nao foi possivel preparar confirmacao da selecao para a cliente: {}", error.getMessage());
+            log.warn("[EmailService] Nao foi possivel preparar a confirmacao da selecao: {}", error.getMessage());
         }
     }
 
@@ -233,7 +233,7 @@ public class EmailService {
                 : ensaio.getDataEnsaio().format(DATA_HORA_BR);
 
         String corpo = String.join("\n\n",
-                "Ola, " + valorOuPadrao(ensaio.getCliente().getNome(), "cliente") + ".",
+                "Olá, " + valorOuPadrao(ensaio.getCliente().getNome(), "pessoa convidada") + ".",
                 "Seu ensaio foi agendado.",
                 "Tipo do ensaio: " + resolverTipoExibicao(ensaio),
                 "Data: " + data,
@@ -346,7 +346,7 @@ public class EmailService {
 
     private String resolverMensagemStatus(ConfiguracaoEmail config, Ensaio ensaio, StatusEnsaio status) {
         return String.join("\n\n",
-                "Olá, " + valorOuPadrao(ensaio.getCliente().getNome(), "cliente") + ".",
+                "Olá, " + valorOuPadrao(ensaio.getCliente().getNome(), "pessoa convidada") + ".",
                 "O status do seu ensaio foi atualizado para: " + formatarStatus(status) + ".",
                 "Com carinho,\n" + valorOuPadrao(config.getNomeRemetente(), "Seu Estudio Fotografico")
         );

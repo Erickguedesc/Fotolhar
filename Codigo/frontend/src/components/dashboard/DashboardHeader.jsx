@@ -112,7 +112,7 @@ function getDashboardTip(dashboard, agenda, today) {
     if (Number(dashboard?.ensaiosSemFotosEnviadas || 0) > 0) {
         return {
             title: 'Fotos pendentes',
-            text: 'Envie as fotos dos ensaios sem upload para deixar a galeria pronta para o cliente.',
+            text: 'Envie as fotos dos ensaios sem upload para deixar a galeria pronta para acesso.',
             to: '/ensaios?grupo=ativos',
         }
     }

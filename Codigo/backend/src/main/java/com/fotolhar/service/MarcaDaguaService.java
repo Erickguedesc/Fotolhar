@@ -317,7 +317,7 @@ public class MarcaDaguaService {
         return usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED,
-                        "Fotógrafa autenticada não encontrada"
+                        "Perfil autenticado não encontrado"
                 ));
     }
 

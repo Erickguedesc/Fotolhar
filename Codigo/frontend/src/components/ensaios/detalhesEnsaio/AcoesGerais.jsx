@@ -37,7 +37,7 @@ export default function AcoesGerais({
               iconTone="whatsapp"
               delivery
               title="Enviar link pelo WhatsApp"
-              description="Compartilhar álbum com a cliente"
+              description="Compartilhar acesso ao álbum"
               onClick={onWhatsApp}
             />
 

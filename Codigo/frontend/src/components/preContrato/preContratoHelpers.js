@@ -89,7 +89,7 @@ export const DEFAULT_CONTRACT_CLAUSES = [
   'As fotos editadas serao entregues via galeria online exclusiva com link protegido por senha. O prazo de entrega e combinado entre as partes.',
   "As imagens exibidas na galeria poderao conter marca d'agua visivel. As fotos editadas em alta resolucao serao disponibilizadas apos quitacao integral.",
   'O profissional contratado reserva o direito de uso das imagens produzidas em portfolio, salvo acordo diferente formalizado por escrito.',
-  'Caso a cliente selecione mais fotos do que o pacote inclui, sera gerado valor adicional por foto excedente, a ser quitado antes da entrega final.',
+  'Caso sejam selecionadas mais fotos do que o pacote inclui, será gerado valor adicional por foto excedente, a ser quitado antes da entrega final.',
 ]
 
 export const DEFAULT_ACCEPT_TEXT =

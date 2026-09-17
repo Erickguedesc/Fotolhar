@@ -107,7 +107,7 @@ export default function FormInfoSection({
 
   return (
     <>
-      {/* ── CARD 1: Dados do cliente ───────────────────────────────────────── */}
+      {/* ── CARD 1: Dados de contato ───────────────────────────────────────── */}
       <div
         className="mb-4 overflow-visible rounded-[14px] border border-[var(--border)] bg-white/78 shadow-[0_14px_34px_rgba(31,31,33,0.055)]"
         onPointerDownCapture={() => onSectionFocus?.('cliente')}
@@ -115,7 +115,7 @@ export default function FormInfoSection({
       >
 
         <SectionHeader
-          label="Dados do cliente"
+          label="Dados de contato"
           icon={
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C84F32" strokeWidth="1.8">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -131,7 +131,7 @@ export default function FormInfoSection({
             <div className="relative">
               <input
                 type="text"
-                placeholder="Ex: Nome Completo do Cliente"
+                placeholder="Ex.: Nome completo"
                 value={form.cliente}
                 onChange={(e) => set('cliente', e.target.value)}
                 autoComplete="off"

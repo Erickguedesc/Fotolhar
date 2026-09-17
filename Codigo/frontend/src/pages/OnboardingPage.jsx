@@ -772,10 +772,10 @@ function AlbumStep({
             <Image className="mt-0.5 text-[var(--gold)]" size={18} />
             <div>
               <p className="text-sm font-semibold text-[var(--text)]">
-                Como o cliente vai receber
+                Como o acesso será compartilhado
               </p>
               <p className="theme-muted mt-1 text-sm leading-6">
-                "Seu album ficara disponivel por {Number(album.prazoExpiracaoAlbumDias) || 15} dias", com capa padrão e mensagens personalizadas para o cliente.
+                "Seu album ficara disponivel por {Number(album.prazoExpiracaoAlbumDias) || 15} dias", com capa padrão e mensagens personalizadas.
               </p>
             </div>
           </div>
@@ -860,7 +860,7 @@ function DemoStep({ demoId }) {
           {demoId ? 'Seu ensaio demo ja foi criado' : 'Crie um ensaio ficticio de verdade'}
         </h3>
         <p className="theme-muted mt-3 text-sm leading-7">
-          Ele entra na agenda e nos detalhes como um ensaio normal. Você pode testar upload, álbum, pré-contrato e seleção sem mexer em um cliente real.
+          Ele entra na agenda e nos detalhes como um ensaio normal. Você pode testar upload, álbum, pré-contrato e seleção sem alterar dados reais.
         </p>
 
         {demoId && (
@@ -877,7 +877,7 @@ function DemoStep({ demoId }) {
       <div className="rounded-[12px] border border-[var(--border)] p-5">
         <p className="theme-muted text-xs font-semibold uppercase tracking-[0.18em]">Demo</p>
         <div className="mt-4 space-y-3 text-sm">
-          <InfoRow icon={UserRound} label="Cliente" value="Cliente Demo Fotolhar" />
+          <InfoRow icon={UserRound} label="Contato" value="Contato Demo Fotolhar" />
           <InfoRow icon={Image} label="Tipo" value="Ensaio demo" />
           <InfoRow icon={CalendarPlus} label="Agenda" value="Daqui 2 dias, 10:00" />
           <InfoRow icon={FileText} label="Contrato" value="Modelo inicial" />
@@ -917,7 +917,7 @@ function ConclusaoStep({ savedItems, demoId }) {
         <p className="text-sm font-semibold text-[var(--gold)]">Galeria demo</p>
         <p className="theme-muted mt-2 text-sm leading-6">
           {demoId
-            ? 'O ensaio demo esta criado. Abra os detalhes, envie algumas fotos e publique o album para ver exatamente como o cliente vai enxergar.'
+            ? 'O ensaio demo está criado. Abra os detalhes, envie algumas fotos e publique o álbum para ver exatamente como o acesso será exibido.'
             : 'Voce pulou a criacao do demo. Pode criar um ensaio real agora e publicar a primeira galeria quando quiser.'}
         </p>
         {demoId && (

@@ -23,7 +23,7 @@ const STATUS_COLORS = {
 const STATUS_DESCRIPTIONS = {
     AGENDADO: 'Preparando o ensaio',
     REALIZADO: 'Ensaio realizado',
-    EM_SELECAO: 'Selecao enviada para o cliente',
+    EM_SELECAO: 'Seleção enviada',
     EM_EDICAO: 'Edicao em andamento',
     FINALIZADO: 'Entrega finalizada',
     CANCELADO: 'Ensaio cancelado',

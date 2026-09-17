@@ -20,9 +20,30 @@ import {
 } from '../services/galeriaUtils'
 import {
   acessarAlbumComSenha,
+  buscarSelecaoAlbum,
   enviarSelecaoFotos,
   validarAlbumPorToken,
 } from '../services/albumAccessService'
+
+function getSelectionDraftStorageKey(token) {
+  return `fotolhar_album_${token}_selecao_rascunho`
+}
+
+function lerRascunhoSelecao(token) {
+  try {
+    const raw = localStorage.getItem(getSelectionDraftStorageKey(token))
+    const rascunho = raw ? JSON.parse(raw) : null
+
+    return {
+      fotosIds: Array.isArray(rascunho?.fotosIds) ? rascunho.fotosIds : [],
+      observacoesPorFoto: rascunho?.observacoesPorFoto && typeof rascunho.observacoesPorFoto === 'object'
+        ? rascunho.observacoesPorFoto
+        : {},
+    }
+  } catch {
+    return { fotosIds: [], observacoesPorFoto: {} }
+  }
+}
 
 export default function GaleriaPage() {
   const { token } = useParams()
@@ -41,14 +62,16 @@ export default function GaleriaPage() {
   })
 
   const [aba, setAba] = useState('galeria')
-  const [favoritas, setFavoritas] = useState(
-    Array.isArray(album?.fotosSelecionadas) ? album.fotosSelecionadas : [],
-  )
-  const [observacoesPorFoto, setObservacoesPorFoto] = useState(
+  const [favoritas, setFavoritas] = useState(() => (
+    Array.isArray(album?.fotosSelecionadas)
+      ? album.fotosSelecionadas
+      : lerRascunhoSelecao(token).fotosIds
+  ))
+  const [observacoesPorFoto, setObservacoesPorFoto] = useState(() => (
     album?.observacoesPorFoto && typeof album.observacoesPorFoto === 'object'
       ? album.observacoesPorFoto
-      : {},
-  )
+      : lerRascunhoSelecao(token).observacoesPorFoto
+  ))
   const [lightboxIndex, setLightboxIndex] = useState(null)
   const [lightboxOrigem, setLightboxOrigem] = useState('galeria')
   const [modalAberto, setModalAberto] = useState(false)
@@ -104,6 +127,76 @@ export default function GaleriaPage() {
       ativo = false
     }
   }, [album?.senhaAcessoTemporaria, token])
+
+  useEffect(() => {
+    let ativo = true
+
+    async function carregarSelecaoJaEnviada() {
+      try {
+        const selecao = await buscarSelecaoAlbum(token)
+        const fotosIds = Array.isArray(selecao?.fotosIds) ? selecao.fotosIds : []
+
+        if (!ativo || fotosIds.length === 0) return
+
+        const observacoes = selecao?.observacoesPorFoto && typeof selecao.observacoesPorFoto === 'object'
+          ? selecao.observacoesPorFoto
+          : {}
+
+        setFavoritas(fotosIds)
+        setObservacoesPorFoto(observacoes)
+        setSelecaoEnviada(true)
+
+        try {
+          localStorage.removeItem(getSelectionDraftStorageKey(token))
+        } catch {
+          // A seleção confirmada continua sendo recuperada pelo backend.
+        }
+
+        setAlbum((albumAtual) => {
+          if (!albumAtual) return albumAtual
+
+          const albumAtualizado = {
+            ...albumAtual,
+            selecaoEnviada: true,
+            fotosSelecionadas: fotosIds,
+            observacoesPorFoto: observacoes,
+          }
+
+          sessionStorage.setItem(`fotolhar_album_${token}`, JSON.stringify(albumAtualizado))
+          return albumAtualizado
+        })
+      } catch (error) {
+        // Um rascunho local não deve ser apagado se a consulta estiver indisponível.
+        console.error('Erro ao recuperar a seleção enviada:', error)
+      }
+    }
+
+    carregarSelecaoJaEnviada()
+
+    return () => {
+      ativo = false
+    }
+  }, [token])
+
+  useEffect(() => {
+    if (selecaoEnviada) {
+      try {
+        localStorage.removeItem(getSelectionDraftStorageKey(token))
+      } catch {
+        // Não impede o uso da galeria se o navegador bloquear o armazenamento.
+      }
+      return
+    }
+
+    try {
+      localStorage.setItem(getSelectionDraftStorageKey(token), JSON.stringify({
+        fotosIds: favoritas,
+        observacoesPorFoto,
+      }))
+    } catch {
+      // O estado da sessão segue funcional mesmo se o storage estiver indisponível.
+    }
+  }, [favoritas, observacoesPorFoto, selecaoEnviada, token])
 
   useEffect(() => {
     if (!album?.expiraEm) {
@@ -244,6 +337,7 @@ export default function GaleriaPage() {
           observacoesPorFoto: observacoesSelecionadas,
         }),
       )
+      localStorage.removeItem(getSelectionDraftStorageKey(token))
     } catch (error) {
       const status = error?.response?.status
 

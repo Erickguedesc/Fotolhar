@@ -3,7 +3,7 @@ export default function PreContratoTop({ clienteNome, sourceLabel, onCopyLink, o
     <div className="precontrato-page-top">
       <div>
         <h1 className="precontrato-title">Pré-contrato</h1>
-        <p className="precontrato-sub">Gerado a partir dos dados {sourceLabel} · {clienteNome || 'complete os dados do cliente'}</p>
+        <p className="precontrato-sub">Gerado a partir dos dados {sourceLabel} · {clienteNome || 'complete os dados de contato'}</p>
       </div>
 
       <div className="precontrato-actions">

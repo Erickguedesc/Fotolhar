@@ -9,7 +9,7 @@ public enum StatusEnsaio {
     AGENDADO,     // Ensaio marcado, ainda não realizado
     REALIZADO,    // Fotos tiradas, ainda não editadas
     EM_SELECAO,    // FOTOS EM SELECAO //
-    EM_EDICAO,    // Fotógrafa está editando
+    EM_EDICAO,    // Edição em andamento
     FINALIZADO,  // Cliente selecionou, aguardando entrega final
     CANCELADO;    // Ensaio cancelado
 

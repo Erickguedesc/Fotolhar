@@ -22,14 +22,12 @@ export default function RelatorioDestaques({ destaques, periodos = [], ensaiosMa
     : 'Sem receita'
 
   return (
-    <div className="flex min-h-0 flex-col space-y-3 xl:h-full">
-      <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C84F32]">
-        Destaques
-      </h2>
+    <section className="rounded-[16px] border border-[#E8E3DF] bg-white p-4 shadow-[0_10px_24px_rgba(31,31,33,0.04)] sm:p-5">
+      <h2 className="text-[18px] font-medium text-[#2B2520]">Destaques do período</h2>
 
-      <div className="theme-scrollbar grid min-h-0 gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <DestaqueItem
-          icon={<Star size={15} />}
+          icon={<Star size={17} />}
           label="Melhor período"
           value={melhorPeriodoLabel}
           variant={periodosComReceita.length > 0 ? 'gold' : 'neutral'}
@@ -56,7 +54,7 @@ export default function RelatorioDestaques({ destaques, periodos = [], ensaiosMa
           variant="blue"
         />
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -70,20 +68,19 @@ function DestaqueItem({ icon, label, value, variant }) {
   }
 
   return (
-    <div className="flex min-h-[42px] items-center gap-3 rounded-[9px] border border-[#E8E3DF] bg-white px-3 py-2">
-      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border ${variants[variant]}`}>
+    <article className="flex min-h-[88px] min-w-0 items-center gap-3 rounded-[11px] border border-[#E8E3DF] bg-white px-3.5 py-3">
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[9px] border ${variants[variant]}`}>
         {icon}
       </span>
 
-      <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+      <div className="min-w-0">
         <p className="truncate text-xs font-medium text-[#6F6D6B]" title={label}>
           {label}
         </p>
-
-        <p className="max-w-[180px] truncate text-right text-sm font-semibold text-[#1F1F21]" title={value}>
+        <p className="mt-1 truncate text-[17px] font-semibold leading-tight text-[#1F1F21]" title={value}>
           {value}
         </p>
       </div>
-    </div>
+    </article>
   )
 }

@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 
 const STEP_LABELS = ['Cliente', 'Ensaio', 'Pacote', 'Resumo']
 const STEP_HINTS = [
-  'Preencha os dados do cliente',
+  'Preencha os dados de contato',
   'Preencha as informações do ensaio',
   'Defina o pacote e valor',
   'Revise os dados e salve o ensaio',

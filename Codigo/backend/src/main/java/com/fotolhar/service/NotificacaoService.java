@@ -179,7 +179,7 @@ public class NotificacaoService {
                 "SELECAO_ENVIADA:" + ensaio.getId() + ":" + epoch(referencia),
                 "SELECAO_ENVIADA",
                 "ALTA",
-                "Selecao enviada pela cliente",
+                "Seleção recebida",
                 nomeCliente(ensaio) + " enviou a selecao. Revise as fotos escolhidas.",
                 ensaio,
                 referencia));
@@ -235,7 +235,7 @@ public class NotificacaoService {
                     "SELECAO_SEM_RESPOSTA:" + ensaio.getId() + ":" + album.getPublicadoEm().toLocalDate(),
                     "SELECAO_SEM_RESPOSTA",
                     "MEDIA",
-                    "Cliente ainda nao selecionou",
+                    "Seleção ainda não recebida",
                     nomeCliente(ensaio) + " ainda nao selecionou as fotos ha " + dias + " dias.",
                     ensaio,
                     album.getPublicadoEm()));

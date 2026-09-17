@@ -459,7 +459,7 @@ export default function CalendarioEnsaios({
           </div>
 
           <div className="flex items-start justify-between gap-3">
-            <h3 className="font-serif text-[24px] font-light capitalize leading-tight text-[var(--text)]">
+            <h3 className="text-[20px] font-semibold capitalize leading-tight tracking-[-0.01em] text-[var(--text)]">
               {DAY_LABEL.format(selectedDate)}
             </h3>
 

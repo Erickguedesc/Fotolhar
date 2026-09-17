@@ -37,7 +37,7 @@ export function formatDateBR(date) {
 }
 
 export function getAnosDisponiveis() {
-  return [2026, 2027, 2028, 2029, 2030]
+  return Array.from({ length: 15 }, (_, index) => 2026 + index)
 }
 
 export function getTipoPeriodoLabel(tipo) {

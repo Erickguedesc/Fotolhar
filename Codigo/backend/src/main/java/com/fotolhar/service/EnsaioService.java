@@ -331,7 +331,7 @@ public void deletar(UUID id) {
         if (!selecaoFotoRepository.existsByAlbumId(album.getId())) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "A cliente ainda nao enviou uma selecao"
+                    "A seleção ainda não foi enviada"
             );
         }
 

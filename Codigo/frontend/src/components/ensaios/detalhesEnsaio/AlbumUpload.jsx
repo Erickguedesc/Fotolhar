@@ -38,7 +38,7 @@ export default function AlbumUpload({
           </span>
 
           <h2 className="text-[17px] font-semibold text-[var(--text)]">
-            Álbum do cliente
+            Álbum compartilhado
           </h2>
         </div>
 

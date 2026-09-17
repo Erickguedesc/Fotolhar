@@ -76,7 +76,7 @@ public class SelecaoResumoPdfService {
             document.add(tabelaFotos(selecoes, texto, destaque));
 
             Paragraph nota = new Paragraph(
-                    "Este documento confirma a relacao de fotos enviada pela cliente pela galeria online.",
+                    "Este documento confirma a relação de fotos enviada pela galeria online.",
                     subtitulo
             );
             nota.setSpacingBefore(14);

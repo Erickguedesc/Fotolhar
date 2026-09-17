@@ -56,7 +56,7 @@ export default function ClienteHistoricoPage() {
         setEnsaios(Array.isArray(ensaiosResponse.data) ? ensaiosResponse.data : [])
       } catch (error) {
         console.error('[ClienteHistórico] Erro ao carregar dados:', error?.response?.data || error)
-        setToast({ message: 'Não foi possível carregar o histórico do cliente.', type: 'error' })
+        setToast({ message: 'Não foi possível carregar o histórico de atendimentos.', type: 'error' })
       } finally {
         setLoading(false)
       }
@@ -109,7 +109,7 @@ export default function ClienteHistoricoPage() {
         <Header />
         <main className="mx-auto max-w-[1200px] px-8 pt-[88px] text-white max-md:px-4">
           <div className="rounded-2xl border border-white/[0.08] bg-[#141414] p-8 text-white/45">
-            Carregando histórico do cliente...
+            Carregando histórico de atendimentos...
           </div>
         </main>
       </>
@@ -168,7 +168,7 @@ export default function ClienteHistoricoPage() {
 
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--gold)]">
-                  Histórico do cliente
+                  Histórico de atendimentos
                 </p>
                 <h1 className="mt-1 truncate font-serif text-[34px] font-light text-white">
                   {cliente.nome}
@@ -226,7 +226,7 @@ export default function ClienteHistoricoPage() {
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--gold-border)] px-5 py-5">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--gold)]">
-                  Álbuns do cliente
+                  Álbuns compartilhados
                 </p>
                 <h2 className="theme-title mt-1 font-serif text-2xl font-light">
                   Entregas independentes

@@ -33,7 +33,7 @@ public class ClienteService {
         String cpf = normalizarCpf(request.getCpf());
 
         if (nome == null || nome.length() < 3) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o nome completo do cliente");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o nome completo");
         }
 
         if (email != null && repository.existsByUsuarioIdAndEmail(usuario.getId(), email)) {
@@ -100,7 +100,7 @@ public class ClienteService {
         String cpf = normalizarCpf(request.getCpf());
 
         if (nome == null || nome.length() < 3) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o nome completo do cliente");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o nome completo");
         }
 
         if (email != null) {

@@ -757,7 +757,7 @@ public class DashboardService {
                 itens.add(DashboardAtencaoResponse.builder()
                         .tipo("SELECAO_ENVIADA")
                         .titulo("Cliente com selecao enviada")
-                        .descricao("Revisar favoritas da cliente")
+                        .descricao("Revisar fotos favoritas")
                         .ensaioId(ensaio.getId())
                         .clienteNome(ensaio.getCliente().getNome())
                         .dataReferencia(ensaio.getAtualizadoEm())

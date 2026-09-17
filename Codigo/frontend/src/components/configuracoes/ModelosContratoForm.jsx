@@ -25,7 +25,7 @@ const DEFAULT_CLAUSULAS = [
   'O presente pre-contrato tem validade de {validade} a partir da data de emissao. Apos este prazo, os valores estao sujeitos a revisao.',
   'O agendamento e confirmado mediante o pagamento do sinal informado neste documento. A data e o horario ficam reservados apos a confirmacao.',
   'As fotos editadas serao entregues via galeria online exclusiva com link protegido por senha. O prazo de entrega e combinado entre as partes.',
-  'Caso a cliente selecione mais fotos do que o pacote inclui, sera gerado valor adicional por foto excedente, a ser quitado antes da entrega final.',
+  'Caso sejam selecionadas mais fotos do que o pacote inclui, será gerado valor adicional por foto excedente, a ser quitado antes da entrega final.',
 ].join('\n')
 
 const DEFAULT_ACEITE =

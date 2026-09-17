@@ -309,7 +309,7 @@ export default function Header({ quickTipContext = null }) {
     [tipRotationSlot, quickTipContext]
   )
   const usuarioNome = usuario?.nome || usuario?.email || 'Usuário'
-  const usuarioDetalhe = 'Fotógrafo'
+  const usuarioDetalhe = 'Profissional'
 
   const isActive = (to) =>
     to === '/ensaios'

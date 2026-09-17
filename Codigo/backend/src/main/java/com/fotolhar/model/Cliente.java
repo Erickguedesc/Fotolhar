@@ -27,7 +27,7 @@ public class Cliente {
     private Usuario usuario;
 
     @Column(nullable = false, length = 200)
-    @NotBlank(message = "O nome do cliente é obrigatório")
+    @NotBlank(message = "Nome é obrigatório")
     private String nome;
 
     @Column(length = 200)

@@ -167,7 +167,7 @@ export default function EnsaioHero({
           {fotoCapa ? (
             <img
               src={fotoCapa}
-              alt={`Capa do ensaio de ${ensaio?.clienteNome || 'cliente'}`}
+              alt={`Capa do ensaio de ${ensaio?.clienteNome || 'contato'}`}
               className="h-full w-full object-cover"
               onError={(event) => {
                 if (fotoCapaOriginal && event.currentTarget.src !== fotoCapaOriginal) {
@@ -208,7 +208,7 @@ export default function EnsaioHero({
             </div>
 
             <h1 className="mt-6 max-w-full break-words font-serif text-[48px] font-light leading-[1.05] tracking-normal text-[var(--text)] [overflow-wrap:anywhere] max-lg:text-[42px] max-md:text-[34px]">
-              {ensaio?.clienteNome || 'Cliente sem nome'}
+              {ensaio?.clienteNome || 'Contato sem nome'}
             </h1>
 
             <div className="mt-6 flex flex-wrap items-center gap-x-7 gap-y-3 text-[14px] text-[var(--text)]">
@@ -323,7 +323,7 @@ export default function EnsaioHero({
                 maxLength={1000}
                 autoFocus
                 onChange={(event) => setNotes(event.target.value)}
-                placeholder="Ex: ainda falta separar fotos, combinar pagamento, cliente pediu atenção em tal detalhe..."
+                placeholder="Ex: ainda falta separar fotos, combinar pagamento, foi solicitada atenção em tal detalhe..."
                 className="min-h-[220px] w-full resize-y rounded-xl border border-[var(--border)] bg-white/70 px-4 py-3 text-[14px] leading-6 text-[var(--text)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--gold-border)]"
               />
 

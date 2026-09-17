@@ -159,7 +159,7 @@ export default function NovoEnsaioPage() {
         setClienteSelecionadoId(cliente.id)
       } catch (error) {
         console.error('[NovoEnsaio] Erro ao carregar cliente existente:', error?.response?.data || error)
-        setToast({ message: 'Nao foi possivel preencher a cliente selecionada.', type: 'error' })
+        setToast({ message: 'Não foi possível preencher os dados selecionados.', type: 'error' })
       }
     }
 
@@ -255,9 +255,9 @@ export default function NovoEnsaioPage() {
   function validate() {
     const e = {}
     if (form.cliente.trim().length < 3)
-      e.cliente = 'Informe o nome completo do cliente'
+      e.cliente = 'Informe o nome completo'
     if (!form.cidade.trim())
-      e.cidade = 'Informe a cidade do cliente'
+      e.cidade = 'Informe a cidade'
     if (!form.tipo)
       e.tipo = 'Selecione o tipo de ensaio'
     if (form.tipo === 'Outro' && !form.tipoCustom?.trim())
@@ -386,7 +386,7 @@ export default function NovoEnsaioPage() {
             Novo Ensaio
           </h1>
           <p className="mt-3 text-[14px] text-[var(--text-muted)]">
-            Preencha os dados do cliente e do ensaio para registrar.
+            Preencha os dados de contato e do ensaio para registrar.
           </p>
         </div>
 

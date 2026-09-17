@@ -179,27 +179,21 @@ return (
           onExportPdf={handleExportPdf}
         />
 
-        <section className="mb-5 grid items-stretch gap-5 rounded-[18px] border border-[#E8E3DF] bg-white/92 p-4 shadow-[0_16px_46px_rgba(31,31,33,0.055)] backdrop-blur sm:p-5 md:grid-cols-2 xl:h-[318px] xl:grid-cols-[1.05fr_0.75fr_1.15fr_1.35fr] xl:overflow-hidden">
-            <RelatorioFiltros
-              tipo={tipo}
-              ano={ano}
-              dataInicio={dataInicio}
-              dataFim={dataFim}
-              anosDisponiveis={anosDisponiveis}
-              loading={loading}
-              onTipoChange={handleTipoChange}
-              onAnoChange={handleAnoChange}
-              onDataInicioChange={setDataInicio}
-              onDataFimChange={setDataFim}
-              onLimparDatas={handleLimparDatas}
-              onFiltrar={handleFiltrarDatas}
-            />
-
-            <RelatorioDestaques
-              destaques={relatorio?.destaques}
-              ensaiosMaisRealizados={relatorio?.ensaiosMaisRealizados}
-              periodos={periodos}
-            />
+        <section className="mb-5 rounded-[18px] border border-[#E8E3DF] bg-white/92 p-4 shadow-[0_16px_46px_rgba(31,31,33,0.055)] backdrop-blur sm:p-5">
+          <RelatorioFiltros
+            tipo={tipo}
+            ano={ano}
+            dataInicio={dataInicio}
+            dataFim={dataFim}
+            anosDisponiveis={anosDisponiveis}
+            loading={loading}
+            onTipoChange={handleTipoChange}
+            onAnoChange={handleAnoChange}
+            onDataInicioChange={setDataInicio}
+            onDataFimChange={setDataFim}
+            onLimparDatas={handleLimparDatas}
+            onFiltrar={handleFiltrarDatas}
+          />
         </section>
 
         <section className="space-y-5">
@@ -210,6 +204,12 @@ return (
             )}
 
             <RelatorioKpiGrid relatorio={relatorio} />
+
+            <RelatorioDestaques
+              destaques={relatorio?.destaques}
+              ensaiosMaisRealizados={relatorio?.ensaiosMaisRealizados}
+              periodos={periodos}
+            />
 
             <RelatorioGrafico periodos={periodos} loading={loading} />
 

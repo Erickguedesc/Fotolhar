@@ -61,7 +61,7 @@ export default function EnsaiosStats({ activeGrupo, counts, loading = false, onC
                   </>
                 ) : (
                   <>
-                    <strong className="font-serif text-[24px] font-light leading-none text-[var(--text)]">
+                    <strong className="text-[22px] font-medium leading-none tracking-[-0.02em] text-[var(--text)]">
                       {count}
                     </strong>
                     <span className="text-[11px] text-[var(--text-muted)]">

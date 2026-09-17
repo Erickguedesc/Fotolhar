@@ -16,116 +16,100 @@ export default function RelatorioFiltros({
   onFiltrar,
 }) {
   return (
-    <>
-      <div className="flex min-h-0 flex-col space-y-3 xl:h-full xl:border-r xl:border-[#EEEAE7] xl:pr-5">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C84F32]">
-          Agrupar por
-        </h2>
-
-        <div className="theme-scrollbar grid min-h-0 gap-2 sm:grid-cols-2 xl:flex-1 xl:grid-cols-1 xl:overflow-y-auto xl:pr-1">
+    <section className="grid gap-4 lg:grid-cols-[minmax(170px,0.85fr)_minmax(130px,0.55fr)_minmax(330px,1.7fr)_minmax(170px,0.8fr)] lg:items-end">
+      <FilterField label="Agrupar por">
+        <select
+          value={tipo}
+          onChange={(event) => onTipoChange(event.target.value)}
+          className="h-11 w-full cursor-pointer rounded-[9px] border border-[#E8E3DF] bg-white px-3.5 text-sm font-medium text-[#1F1F21] outline-none transition focus:border-[#C84F32] focus:ring-4 focus:ring-[#C84F32]/10"
+        >
           {TIPOS_PERIODO.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              onClick={() => onTipoChange(item.value)}
-              className={`flex min-h-[42px] w-full items-center justify-between rounded-[9px] border px-3.5 py-2.5 text-left text-sm transition ${
-                tipo === item.value
-                  ? 'border-[#C84F32] bg-[#F8EDE8] text-[#C84F32] shadow-[0_6px_14px_rgba(200,79,50,0.08)]'
-                  : 'border-[#E8E3DF] bg-white text-[#1F1F21] hover:border-[#C84F32] hover:text-[#C84F32]'
-              }`}
-            >
-              <span>{item.label}</span>
-              <span className="text-[11px] text-[#96928E]">{item.detalhe}</span>
-            </button>
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
           ))}
-        </div>
-      </div>
+        </select>
+      </FilterField>
 
-      <div className="flex min-h-0 flex-col space-y-3 xl:h-full xl:border-r xl:border-[#EEEAE7] xl:pr-5">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C84F32]">
-          Ano
-        </h2>
-
-        <div className="theme-scrollbar grid min-h-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap xl:grid xl:flex-1 xl:grid-cols-1 xl:overflow-y-auto xl:pr-1">
+      <FilterField label="Ano">
+        <select
+          value={ano}
+          onChange={(event) => onAnoChange(Number(event.target.value))}
+          className="h-11 w-full cursor-pointer rounded-[9px] border border-[#E8E3DF] bg-white px-3.5 text-sm font-medium text-[#1F1F21] outline-none transition focus:border-[#C84F32] focus:ring-4 focus:ring-[#C84F32]/10"
+        >
           {anosDisponiveis.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => onAnoChange(item)}
-              className={`min-h-[36px] rounded-[8px] border px-3 py-1.5 text-[13px] font-medium transition ${
-                Number(ano) === Number(item)
-                  ? 'border-[#C84F32] bg-[#C84F32] text-white shadow-[0_6px_14px_rgba(200,79,50,0.14)]'
-                  : 'border-[#E8E3DF] bg-white text-[#1F1F21] hover:border-[#C84F32] hover:text-[#C84F32]'
-              }`}
-            >
+            <option key={item} value={item}>
               {item}
-            </button>
+            </option>
           ))}
+        </select>
+      </FilterField>
+
+      <FilterField label="Período personalizado">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
+          <input
+            type="date"
+            value={dataInicio}
+            onChange={(event) => onDataInicioChange(event.target.value)}
+            aria-label="Data inicial"
+            className="h-11 min-w-0 rounded-[9px] border border-[#E8E3DF] bg-white px-3.5 text-sm text-[#1F1F21] outline-none transition focus:border-[#C84F32] focus:ring-4 focus:ring-[#C84F32]/10"
+          />
+
+          <span className="hidden text-center text-xs font-medium text-[#6F6D6B] sm:block">até</span>
+
+          <input
+            type="date"
+            value={dataFim}
+            onChange={(event) => onDataFimChange(event.target.value)}
+            aria-label="Data final"
+            className="h-11 min-w-0 rounded-[9px] border border-[#E8E3DF] bg-white px-3.5 text-sm text-[#1F1F21] outline-none transition focus:border-[#C84F32] focus:ring-4 focus:ring-[#C84F32]/10"
+          />
         </div>
-      </div>
+      </FilterField>
 
-      <div className="flex min-h-0 flex-col space-y-3 xl:h-full xl:border-r xl:border-[#EEEAE7] xl:pr-5">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C84F32]">
-          Período personalizado
-        </h2>
-
-        <div className="theme-scrollbar min-h-0 space-y-3 xl:flex-1 xl:overflow-y-auto xl:pr-1">
-          <label className="block">
-            <span className="mb-1.5 block text-[11px] font-medium text-[#6F6D6B]">
-              Início
-            </span>
-            <input
-              type="date"
-              value={dataInicio}
-              onChange={(event) => onDataInicioChange(event.target.value)}
-              className="h-11 w-full rounded-[9px] border border-[#E8E3DF] bg-white px-3.5 text-sm text-[#1F1F21] outline-none transition focus:border-[#C84F32] focus:ring-4 focus:ring-[#C84F32]/10"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block text-[11px] font-medium text-[#6F6D6B]">
-              Fim
-            </span>
-            <input
-              type="date"
-              value={dataFim}
-              onChange={(event) => onDataFimChange(event.target.value)}
-              className="h-11 w-full rounded-[9px] border border-[#E8E3DF] bg-white px-3.5 text-sm text-[#1F1F21] outline-none transition focus:border-[#C84F32] focus:ring-4 focus:ring-[#C84F32]/10"
-            />
-          </label>
-        </div>
-
-        <div className="shrink-0 space-y-2">
-          {(dataInicio || dataFim) && (
-            <button
-              type="button"
-              onClick={onLimparDatas}
-              className="text-left text-xs font-medium text-[#96928E] transition hover:text-[#C84F32]"
-            >
-              Limpar datas
-            </button>
-          )}
-
+      <div className="flex min-w-0 flex-col justify-end gap-1.5">
+        {(dataInicio || dataFim) ? (
           <button
             type="button"
-            onClick={onFiltrar}
-            disabled={loading}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-[9px] bg-[#C84F32] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(200,79,50,0.14)] transition hover:bg-[#AE3F28] disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={onLimparDatas}
+            className="self-start text-xs font-medium text-[#96928E] transition hover:text-[#C84F32]"
           >
-            {loading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Carregando
-              </>
-            ) : (
-              <>
-                <Funnel size={16} />
-                Filtrar datas
-              </>
-            )}
+            Limpar datas
           </button>
-        </div>
+        ) : (
+          <span className="hidden text-xs sm:block" aria-hidden="true">&nbsp;</span>
+        )}
+
+        <button
+          type="button"
+          onClick={onFiltrar}
+          disabled={loading}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-[9px] bg-[#C84F32] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(200,79,50,0.14)] transition hover:bg-[#AE3F28] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Carregando
+            </>
+          ) : (
+            <>
+              <Funnel size={16} />
+              Filtrar dados
+            </>
+          )}
+        </button>
       </div>
-    </>
+    </section>
+  )
+}
+
+function FilterField({ label, children }) {
+  return (
+    <label className="block min-w-0">
+      <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C84F32]">
+        {label}
+      </span>
+      {children}
+    </label>
   )
 }

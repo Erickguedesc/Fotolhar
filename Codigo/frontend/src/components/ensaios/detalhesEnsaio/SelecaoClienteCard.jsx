@@ -103,7 +103,7 @@ export default function SelecaoClienteCard({
           {observacao ? (
             <div className="mt-3 rounded-lg border border-[var(--gold-border)] bg-[var(--gold-dim)] p-3">
               <p className="mb-1 text-[10px] uppercase tracking-[0.14em] text-[var(--gold)]">
-                Observação da cliente
+                Observação recebida
               </p>
               <p className="text-[12px] leading-5 text-[var(--text)]">
                 {observacao}
@@ -138,11 +138,11 @@ export default function SelecaoClienteCard({
           ) : jaConsultouSelecao ? (
             <>
               <p className="text-[14px] text-[var(--text)]">
-                Seleção ainda não feita pela cliente.
+                Seleção ainda não realizada.
               </p>
 
               <p className="mt-1 text-[12px] text-[var(--text-muted)]">
-                Quando a cliente finalizar a escolha, as fotos selecionadas aparecerão aqui.
+                Quando a seleção for finalizada, as fotos escolhidas aparecerão aqui.
               </p>
             </>
           ) : (
@@ -152,7 +152,7 @@ export default function SelecaoClienteCard({
               </p>
 
               <p className="mt-1 text-[12px] text-[var(--text-muted)]">
-                Quando cliente finalizar a escolha, a seleção aparecerá aqui.
+                Quando a escolha for finalizada, a seleção aparecerá aqui.
               </p>
             </>
           )}
@@ -190,7 +190,7 @@ export default function SelecaoClienteCard({
 
               {selecao.excedente > 0 && (
                 <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-[13px] text-red-700">
-                  A cliente selecionou fotos acima do limite do pacote.
+                  A seleção ultrapassou o limite do pacote.
                 </div>
               )}
             </>
@@ -250,7 +250,7 @@ export default function SelecaoClienteCard({
                 <div className="flex items-center justify-between gap-4 border-b border-white/[0.08] px-7 py-6 max-sm:px-5">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--gold)]">
-                      Seleção do cliente
+                      Seleção de fotos
                     </p>
                     <h3 className="mt-1 font-serif text-2xl font-light text-white">
                       Todas as fotos selecionadas

@@ -19,7 +19,7 @@ export default function DashboardEmptyState() {
                     </h1>
 
                     <p className="theme-muted mx-auto mt-5 max-w-xl text-sm leading-7">
-                        Agende um ensaio para cadastrar o cliente e acompanhar agenda,
+                        Agende um ensaio para cadastrar o contato e acompanhar agenda,
                         fotos, seleção, entregas e muito mais aqui na sua Dashboard.
                     </p>
 

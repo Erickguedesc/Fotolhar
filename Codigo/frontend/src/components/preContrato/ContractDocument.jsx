@@ -65,7 +65,7 @@ export default function ContractDocument({ draft, onChange }) {
       </div>
 
       <div className="precontrato-body">
-        <ContractSection title="1. Dados do Cliente" subtitle="Contratante" icon={<UserIcon />}>
+        <ContractSection title="1. Dados para contratação" subtitle="Pessoa contratante" icon={<UserIcon />}>
           <div className="precontrato-data-grid three">
             <DataCell label="Nome completo" value={draft.clienteNome} onChange={set('clienteNome')} />
             <DataCell label="CPF" value={draft.clienteCpf} onChange={set('clienteCpf')} />
@@ -180,7 +180,7 @@ export default function ContractDocument({ draft, onChange }) {
               <div className="precontrato-sign-role">Profissional de fotografia - <EditableField value={profissionalDocumento} onChange={set('profissionalDocumento')} /></div>
             </div>
             <div className="precontrato-sign-box">
-              <div className="precontrato-data-key">Contratante - Cliente</div>
+              <div className="precontrato-data-key">Pessoa contratante</div>
               <div className="precontrato-sign-line" />
               <div className="precontrato-sign-name"><EditableField value={draft.clienteNome} onChange={set('clienteNome')} /></div>
               <div className="precontrato-sign-role">CPF <EditableField value={draft.clienteCpf} onChange={set('clienteCpf')} /></div>

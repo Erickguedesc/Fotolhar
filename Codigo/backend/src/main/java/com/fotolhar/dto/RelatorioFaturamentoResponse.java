@@ -40,4 +40,5 @@ public class RelatorioFaturamentoResponse {
     private List<RelatorioPeriodoResponse> periodos;
     private List<RelatorioTipoEnsaioResponse> tiposEnsaio;
     private List<RelatorioEnsaioMaisRealizadoResponse> ensaiosMaisRealizados;
+    private List<RelatorioTrabalhoMaiorValorResponse> trabalhosMaiorValor;
 }

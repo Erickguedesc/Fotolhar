@@ -5,6 +5,7 @@ import com.fotolhar.dto.RelatorioEnsaioMaisRealizadoResponse;
 import com.fotolhar.dto.RelatorioFaturamentoResponse;
 import com.fotolhar.dto.RelatorioPeriodoResponse;
 import com.fotolhar.dto.RelatorioTipoEnsaioResponse;
+import com.fotolhar.dto.RelatorioTrabalhoMaiorValorResponse;
 import com.fotolhar.enums.StatusEnsaio;
 import com.fotolhar.enums.TipoEnsaio;
 import com.fotolhar.enums.TipoPeriodoRelatorio;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
 public class RelatorioService {
 
         private static final int LIMITE_ENSAIOS_MAIS_REALIZADOS = 5;
+        private static final int LIMITE_TRABALHOS_MAIOR_VALOR = 5;
         private static final Set<StatusEnsaio> STATUS_ENSAIOS_REALIZADOS = EnumSet.of(
                         StatusEnsaio.REALIZADO,
                         StatusEnsaio.EM_SELECAO,
@@ -130,6 +132,13 @@ List<RelatorioEnsaioMaisRealizadoResponse> ensaiosMaisRealizados = montarEnsaios
         periodosInternos
 );
 
+List<RelatorioTrabalhoMaiorValorResponse> trabalhosMaiorValor = montarTrabalhosMaiorValor(
+        ensaios,
+        periodosInternos,
+        albumPorEnsaio,
+        totalSelecoesPorAlbum
+);
+
 RelatorioDestaqueResponse destaques = montarDestaques(periodos, ensaiosMaisRealizados);
 
 int anoComparado = anoFinal - 1;
@@ -187,6 +196,7 @@ RelatorioComparativoResponse comparativo = montarComparativo(
         .periodos(periodos)
         .tiposEnsaio(tiposEnsaio)
         .ensaiosMaisRealizados(ensaiosMaisRealizados)
+        .trabalhosMaiorValor(trabalhosMaiorValor)
         .build();
         }
 
@@ -313,6 +323,33 @@ RelatorioComparativoResponse comparativo = montarComparativo(
                                 .toList();
         }
 
+        private List<RelatorioTrabalhoMaiorValorResponse> montarTrabalhosMaiorValor(
+                        List<Ensaio> ensaios,
+                        List<PeriodoRelatorioInterno> periodos,
+                        Map<UUID, Album> albumPorEnsaio,
+                        Map<UUID, Integer> totalSelecoesPorAlbum) {
+                return ensaios.stream()
+                                .filter(this::isEnsaioFinanceiro)
+                                .filter(this::isValorRecebido)
+                                .filter(ensaio -> pertenceAAlgumPeriodo(ensaio, periodos))
+                                .map(ensaio -> RelatorioTrabalhoMaiorValorResponse.builder()
+                                                .ensaioId(ensaio.getId())
+                                                .tipoExibicao(resolverTipoExibicao(ensaio))
+                                                .clienteNome(resolverNomeCliente(ensaio))
+                                                .valor(calcularTotalLiquidoDoEnsaio(
+                                                                ensaio,
+                                                                albumPorEnsaio,
+                                                                totalSelecoesPorAlbum))
+                                                .build())
+                                .filter(trabalho -> trabalho.getValor().compareTo(BigDecimal.ZERO) > 0)
+                                .sorted(Comparator
+                                                .comparing(RelatorioTrabalhoMaiorValorResponse::getValor)
+                                                .reversed()
+                                                .thenComparing(RelatorioTrabalhoMaiorValorResponse::getClienteNome))
+                                .limit(LIMITE_TRABALHOS_MAIOR_VALOR)
+                                .toList();
+        }
+
         private RelatorioTipoEnsaioResponse montarTipoEnsaio(
                         TipoEnsaio tipo,
                         String tipoExibicao,
@@ -375,6 +412,15 @@ RelatorioComparativoResponse comparativo = montarComparativo(
                                                 ensaio,
                                                 albumPorEnsaio,
                                                 totalSelecoesPorAlbum));
+        }
+
+        private String resolverNomeCliente(Ensaio ensaio) {
+                if (ensaio.getCliente() == null || ensaio.getCliente().getNome() == null
+                                || ensaio.getCliente().getNome().isBlank()) {
+                        return "Cliente";
+                }
+
+                return ensaio.getCliente().getNome();
         }
 
         private boolean isEnsaioFinanceiro(Ensaio ensaio) {

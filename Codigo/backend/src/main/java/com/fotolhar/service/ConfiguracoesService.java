@@ -402,7 +402,7 @@ public class ConfiguracoesService {
         return usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED,
-                        "Fotógrafa autenticada não encontrada"
+                        "Perfil autenticado não encontrado"
                 ));
     }
 
@@ -447,7 +447,7 @@ public class ConfiguracoesService {
                                 .enviarConfirmacaoSelecaoCliente(true)
                                 .enviarMudancaStatus(false)
                                 .mensagemAlbumPublicado("Olá! Seu álbum já está disponível. Acesse pelo link abaixo usando a senha enviada.")
-                                .mensagemSelecaoRecebida("A cliente enviou a seleção de fotos. Acesse o sistema para conferir os detalhes.")
+                                .mensagemSelecaoRecebida("A seleção de fotos foi enviada. Acesse o sistema para conferir os detalhes.")
                                 .build()
                 ));
     }

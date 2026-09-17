@@ -31,7 +31,7 @@ public class Foto {
     @Column(name = "nome_original", length = 255)
     private String nomeOriginal;
 
-    /** URL com marca d'água — esta é exibida para o cliente (R04) */
+    /** URL com marca d'água exibida na galeria compartilhada (R04) */
     @Column(name = "url_watermark", nullable = false, columnDefinition = "TEXT")
     private String urlWatermark;
 

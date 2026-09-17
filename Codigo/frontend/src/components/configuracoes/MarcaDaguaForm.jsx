@@ -200,9 +200,9 @@ function handleGerarTexto() {
         </h3>
 
        <p className={`mt-2 ${panelTextClass}`}>
-  Configure a marca aplicada nas fotos exibidas na galeria da cliente.
+  Configure a marca aplicada nas fotos exibidas na galeria compartilhada.
   Você pode enviar uma imagem/logo (preferencialmente PNG) ou criar uma marca d’água por texto.
-  A imagem original continua preservada, e a cliente visualiza apenas a versão protegida.
+  A imagem original continua preservada, e a galeria exibe apenas a versão protegida.
 </p>
 
 <ul className="mt-4 grid gap-2 text-sm text-[var(--text-muted)]">
@@ -233,7 +233,7 @@ function handleGerarTexto() {
           </h3>
 
           <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Imagem aplicada sobre as fotos exibidas na galeria da cliente. Preferencialmente PNG
+            Imagem aplicada sobre as fotos exibidas na galeria compartilhada. Preferencialmente PNG
           </p>
         </div>
 
@@ -664,7 +664,7 @@ function handleGerarTexto() {
 
       <p className="mt-3 text-xs leading-5 text-[var(--text-muted)]">
   {form.marcaDaguaUrl
-    ? 'Esta prévia mostra como a marca d’água aparecerá para a cliente. A imagem original permanece preservada.'
+    ? 'Esta prévia mostra como a marca d’água aparecerá na galeria. A imagem original permanece preservada.'
     : 'Envie uma imagem de marca d’água para visualizar e aplicar a proteção nas fotos da galeria.'}
 </p>
       </div>
@@ -709,7 +709,7 @@ disabled={reprocessLoading || !temMarcaDagua}
   open={confirmModal === 'reprocessar'}
   type="gold"
   title="Reprocessar fotos?"
-  description="As fotos já enviadas serão atualizadas com a configuração atual da marca d’água. Isso pode alterar a visualização da galeria da cliente."
+  description="As fotos já enviadas serão atualizadas com a configuração atual da marca d’água. Isso pode alterar a visualização da galeria."
   confirmText="Reprocessar"
   cancelText="Cancelar"
   loading={reprocessLoading}
