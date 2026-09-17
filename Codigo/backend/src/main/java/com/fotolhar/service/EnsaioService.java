@@ -9,6 +9,7 @@ import com.fotolhar.dto.EnsaioResponse;
 import com.fotolhar.dto.EnsaioStatusRequest;
 import com.fotolhar.dto.FotoResponse;
 import com.fotolhar.dto.HistoricoStatusEnsaioResponse;
+import com.fotolhar.event.EnsaioStatusAlteradoEvent;
 import com.fotolhar.dto.AlbumAdminResponseDTO;
 import com.fotolhar.dto.SelecaoResponse;
 import com.fotolhar.enums.StatusEnsaio;
@@ -32,6 +33,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 // Adiciona esse import no topo
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -60,6 +62,7 @@ public class EnsaioService {
     private final AlbumService albumService;
     private final AlbumPublicoService albumPublicoService;
     private final HistoricoStatusEnsaioService historicoStatusEnsaioService;
+    private final ApplicationEventPublisher eventPublisher;
 
     
     
@@ -287,7 +290,7 @@ public void deletar(UUID id) {
         ensaio.setStatus(request.getStatus());
         ensaio.setProgresso(resolverProgresso(request.getStatus()));
         Ensaio salvo = ensaioRepository.save(ensaio);
-        emailService.avisarStatusAlterado(salvo, request.getStatus());
+        eventPublisher.publishEvent(new EnsaioStatusAlteradoEvent(salvo.getId(), request.getStatus()));
         return toResponse(salvo);
     }
 
@@ -339,7 +342,7 @@ public void deletar(UUID id) {
         ensaio.setProgresso(resolverProgresso(StatusEnsaio.EM_EDICAO));
 
         Ensaio salvo = ensaioRepository.save(ensaio);
-        emailService.avisarStatusAlterado(salvo, StatusEnsaio.EM_EDICAO);
+        eventPublisher.publishEvent(new EnsaioStatusAlteradoEvent(salvo.getId(), StatusEnsaio.EM_EDICAO));
 
         return toResponse(salvo);
     }

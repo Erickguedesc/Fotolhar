@@ -478,10 +478,15 @@
     setActionLoading(true)
 
     try {
-      await ensaiosService.atualizarStatus(ensaio.id, status)
+      const response = await ensaiosService.atualizarStatus(ensaio.id, status)
+      const ensaioAtualizado = response?.data
+
+      if (ensaioAtualizado) {
+        setEnsaio((current) => current ? { ...current, ...ensaioAtualizado } : current)
+      }
+
       showToast('Status atualizado com sucesso.')
-      await loadEnsaio()
-      await loadHistoricoStatus()
+      void Promise.all([loadEnsaio(), loadHistoricoStatus()])
     } catch (error) {
       const msg =
         error?.response?.data?.message ||
@@ -499,10 +504,15 @@
     setActionLoading(true)
 
     try {
-      await ensaiosService.aprovarSelecao(ensaio.id)
+      const response = await ensaiosService.aprovarSelecao(ensaio.id)
+      const ensaioAtualizado = response?.data
+
+      if (ensaioAtualizado) {
+        setEnsaio((current) => current ? { ...current, ...ensaioAtualizado } : current)
+      }
+
       showToast('Seleção aprovada. Ensaio movido para edição.')
-      await loadEnsaio()
-      await loadHistoricoStatus()
+      void Promise.all([loadEnsaio(), loadHistoricoStatus()])
     } catch (error) {
       const msg = getApiErrorMessage(
         error,

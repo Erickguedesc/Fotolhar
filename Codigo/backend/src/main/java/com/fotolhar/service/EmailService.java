@@ -1,12 +1,14 @@
 package com.fotolhar.service;
 
 import com.fotolhar.enums.StatusEnsaio;
+import com.fotolhar.event.EnsaioStatusAlteradoEvent;
 import com.fotolhar.model.Album;
 import com.fotolhar.model.ConfiguracaoEmail;
 import com.fotolhar.model.Ensaio;
 import com.fotolhar.model.SelecaoFoto;
 import com.fotolhar.repository.AlbumRepository;
 import com.fotolhar.repository.ConfiguracaoEmailRepository;
+import com.fotolhar.repository.EnsaioRepository;
 import com.fotolhar.repository.SelecaoFotoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -36,6 +40,7 @@ public class EmailService {
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final ConfiguracaoEmailRepository configuracaoEmailRepository;
+    private final EnsaioRepository ensaioRepository;
     private final AlbumRepository albumRepository;
     private final SelecaoFotoRepository selecaoFotoRepository;
     private final EmailDeliveryService emailDeliveryService;
@@ -213,6 +218,18 @@ public class EmailService {
         String corpo = resolverMensagemStatus(config, ensaio, status);
 
         enviar(config, destino, "Atualizaçao do seu ensaio", corpo);
+    }
+
+    @Async("emailTaskExecutor")
+    @Transactional(readOnly = true)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void enviarNotificacaoStatusAposAtualizacao(EnsaioStatusAlteradoEvent event) {
+        try {
+            ensaioRepository.findById(event.ensaioId())
+                    .ifPresent(ensaio -> avisarStatusAlterado(ensaio, event.status()));
+        } catch (Exception error) {
+            log.warn("[EmailService] Não foi possível enviar a atualização de status: {}", error.getMessage());
+        }
     }
 
     public void avisarEnsaioAgendado(Ensaio ensaio) {
