@@ -57,7 +57,7 @@ app:
   frontend-url: ${APP_FRONTEND_URL:http://localhost:5173}
 
 server:
-  port: 8080
+  port: ${PORT:8080}
   error:
     include-message: always
     include-binding-errors: always
