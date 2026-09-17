@@ -308,6 +308,8 @@ export default function DashboardPage() {
     }, [])
 
     useEffect(() => {
+        if (!dashboard) return
+
         let active = true
 
         async function carregarMensagens() {
@@ -334,7 +336,7 @@ export default function DashboardPage() {
         return () => {
             active = false
         }
-    }, [])
+    }, [dashboard])
 
     useEffect(() => {
         if (!dashboard) return
